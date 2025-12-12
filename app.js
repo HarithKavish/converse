@@ -192,7 +192,6 @@ function ensureGoogleScript(timeoutMs = 20000) {
         if (!existing) {
             const script = document.createElement('script');
             script.src = 'https://accounts.google.com/gsi/client';
-            script.crossOrigin = 'anonymous';
             script.async = true;
             script.defer = true;
             script.onload = () => resolve(true);
