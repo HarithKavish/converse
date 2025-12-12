@@ -22,7 +22,13 @@
                 <div class="title">Offline-first Chat</div>
             </div>
             <div class="auth">
-                <div id="google-login-container"></div>
+                <div id="g_id_onload"
+                    data-client_id="59648450302-sqkk4pdujkt4hrm0uuhq95pq55b4jg2k.apps.googleusercontent.com"
+                    data-callback="handleCredentialResponse" data-auto_prompt="false">
+                </div>
+                <div id="google-login-container" class="g_id_signin" data-type="standard" data-size="large"
+                    data-theme="outline" data-text="signin_with" data-shape="pill">
+                </div>
                 <button id="logout" class="ghost ghost-danger" hidden>Logout</button>
             </div>
         </header>

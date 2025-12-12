@@ -278,8 +278,24 @@ button.ghost-danger {
         grid-template-columns: 1fr;
     }
 
-    .auth {
-        flex-wrap: wrap;
-        justify-content: flex-end;
+    .topbar {
+        flex-direction: column;
+        gap: 16px;
+        align-items: flex-start;
     }
+
+    .auth {
+        width: 100%;
+        flex-wrap: wrap;
+        justify-content: flex-start;
+        gap: 10px;
+    }
+}
+
+/* Google Sign-In button container */
+#google-login-container {
+    min-width: 200px;
+    min-height: 40px;
+    display: flex;
+    align-items: center;
 }

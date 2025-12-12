@@ -215,43 +215,27 @@ function handleCredentialResponse(response) {
     });
 }
 
+// Make callback globally accessible for HTML API
+window.handleCredentialResponse = handleCredentialResponse;
+
 function initGoogle() {
-    if (!GOOGLE_CLIENT_ID || GOOGLE_CLIENT_ID.startsWith('YOUR_')) {
-        els.googleLoginContainer.innerHTML = '<span style="color:#99a1b3">Google login not configured</span>';
-        return;
+    // With HTML API, the button is rendered automatically by the GIS script.
+    // We just need to ensure the callback is available and handle the signed-in state.
+
+    // Hide the button container if user is already signed in
+    if (state.currentUser) {
+        els.googleLoginContainer.style.display = 'none';
     }
-    els.googleLoginContainer.innerHTML = '<span style="color:#99a1b3">Loading Google...</span>';
+
+    // Optionally trigger One Tap prompt for better UX
     googleReadyPromise()
         .then(() => {
-            // Initialize Google Identity Services
-            window.google.accounts.id.initialize({
-                client_id: GOOGLE_CLIENT_ID,
-                callback: handleCredentialResponse,
-            });
-
-            // Clear the loading text
-            els.googleLoginContainer.innerHTML = '';
-
-            // Render the official Google Sign-In button
-            window.google.accounts.id.renderButton(
-                els.googleLoginContainer,
-                {
-                    type: 'standard',
-                    theme: 'outline',
-                    size: 'large',
-                    text: 'signin_with',
-                    shape: 'pill',
-                }
-            );
-
-            // Also display One Tap prompt (optional, for better UX)
             if (!state.currentUser) {
                 window.google.accounts.id.prompt();
             }
         })
         .catch((err) => {
-            console.warn(err.message);
-            els.googleLoginContainer.innerHTML = '<span style="color:#ff7b7b">Google login unavailable</span>';
+            console.warn('Google One Tap not available:', err.message);
         });
 }
 
