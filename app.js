@@ -166,32 +166,55 @@ function decodeJwt(token) {
     }
 }
 
+function waitForGoogleClient(timeoutMs = 5000, intervalMs = 100) {
+    return new Promise((resolve, reject) => {
+        const started = Date.now();
+        const timer = setInterval(() => {
+            if (window.google?.accounts?.id) {
+                clearInterval(timer);
+                resolve(true);
+            } else if (Date.now() - started > timeoutMs) {
+                clearInterval(timer);
+                reject(new Error('Google Identity Services script not ready'));
+            }
+        }, intervalMs);
+    });
+}
+
 function initGoogle() {
     if (!GOOGLE_CLIENT_ID || GOOGLE_CLIENT_ID.startsWith('YOUR_')) {
         els.googleBtn.disabled = true;
         els.googleBtn.title = 'Set GOOGLE_CLIENT_ID in app.js to enable Google login';
         return;
     }
-    if (!window.google || !window.google.accounts || !window.google.accounts.id) {
-        console.warn('Google Identity Services script not ready');
-        return;
-    }
-    window.google.accounts.id.initialize({
-        client_id: GOOGLE_CLIENT_ID,
-        callback: (response) => {
-            const payload = decodeJwt(response.credential);
-            if (!payload?.email) return;
-            setCurrentUser({
-                email: payload.email,
-                name: payload.name || payload.given_name || payload.family_name || 'Google User',
-                picture: payload.picture,
-                provider: 'google',
+    els.googleBtn.textContent = 'Loading Google...';
+    els.googleBtn.disabled = true;
+    waitForGoogleClient()
+        .then(() => {
+            window.google.accounts.id.initialize({
+                client_id: GOOGLE_CLIENT_ID,
+                callback: (response) => {
+                    const payload = decodeJwt(response.credential);
+                    if (!payload?.email) return;
+                    setCurrentUser({
+                        email: payload.email,
+                        name: payload.name || payload.given_name || payload.family_name || 'Google User',
+                        picture: payload.picture,
+                        provider: 'google',
+                    });
+                },
             });
-        },
-    });
-    els.googleBtn.addEventListener('click', () => {
-        window.google.accounts.id.prompt();
-    });
+            els.googleBtn.textContent = 'Login with Google';
+            els.googleBtn.disabled = Boolean(state.currentUser);
+            els.googleBtn.addEventListener('click', () => {
+                window.google.accounts.id.prompt();
+            });
+        })
+        .catch((err) => {
+            console.warn(err.message);
+            els.googleBtn.textContent = 'Google login unavailable';
+            els.googleBtn.disabled = true;
+        });
 }
 
 function logout() {
