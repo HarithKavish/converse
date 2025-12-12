@@ -239,8 +239,8 @@ function handleCredentialResponse(response) {
         picture: payload.picture,
         provider: 'google',
     });
-    // After sign-in, bootstrap Drive storage and hydrate messages
-    bootstrapDriveSync();
+    // Show sync button for user to trigger Drive access (popup requires user gesture)
+    showSyncButton();
 }
 
 // Make callback globally accessible for HTML API
@@ -273,13 +273,39 @@ function logout() {
     }
     setCurrentUser(null);
     state.drive = { accessToken: null, fileId: null, status: 'idle' };
+    hideSyncButton();
 }
 
 function initUI() {
     els.messageForm.addEventListener('submit', handleSend);
     els.startChatForm.addEventListener('submit', handleStartChat);
     els.logoutBtn.addEventListener('click', logout);
+    els.syncBtn = document.getElementById('sync-drive');
+    els.syncBtn?.addEventListener('click', handleSyncClick);
     toggleAuthButtons();
+}
+
+function showSyncButton() {
+    if (els.syncBtn) {
+        els.syncBtn.hidden = false;
+    }
+}
+
+function hideSyncButton() {
+    if (els.syncBtn) {
+        els.syncBtn.hidden = true;
+    }
+}
+
+async function handleSyncClick() {
+    if (!state.currentUser) return;
+    try {
+        await bootstrapDriveSync();
+        hideSyncButton();
+    } catch (err) {
+        console.warn('Sync failed', err);
+        alert('Drive sync failed. Please try again.');
+    }
 }
 
 function restoreLastSession() {
@@ -312,7 +338,12 @@ function main() {
     initUI();
     restoreLastSession();
     if (state.currentUser) {
-        bootstrapDriveSync();
+        // If we have a cached token, try silent sync; otherwise show sync button
+        if (state.drive.accessToken) {
+            bootstrapDriveSync();
+        } else {
+            showSyncButton();
+        }
     }
     initGoogle();
     renderMessages();
