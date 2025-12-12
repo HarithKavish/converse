@@ -181,6 +181,29 @@ function waitForGoogleClient(timeoutMs = 5000, intervalMs = 100) {
     });
 }
 
+function ensureGoogleScript(timeoutMs = 15000) {
+    return new Promise((resolve, reject) => {
+        if (window.google?.accounts?.id) {
+            resolve(true);
+            return;
+        }
+
+        const existing = document.querySelector('script[src="https://accounts.google.com/gsi/client"]');
+        if (!existing) {
+            const script = document.createElement('script');
+            script.src = 'https://accounts.google.com/gsi/client';
+            script.async = true;
+            script.defer = true;
+            script.onload = () => resolve(true);
+            script.onerror = () => reject(new Error('Failed to load Google Identity Services script'));
+            document.head.appendChild(script);
+        }
+
+        // Also wait for global to appear in case onload doesn't fire due to caching.
+        waitForGoogleClient(timeoutMs).then(resolve).catch(reject);
+    });
+}
+
 function initGoogle() {
     if (!GOOGLE_CLIENT_ID || GOOGLE_CLIENT_ID.startsWith('YOUR_')) {
         els.googleBtn.disabled = true;
@@ -189,7 +212,7 @@ function initGoogle() {
     }
     els.googleBtn.textContent = 'Loading Google...';
     els.googleBtn.disabled = true;
-    waitForGoogleClient()
+    ensureGoogleScript()
         .then(() => {
             window.google.accounts.id.initialize({
                 client_id: GOOGLE_CLIENT_ID,
