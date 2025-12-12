@@ -18,7 +18,7 @@ const els = {
     messageForm: document.getElementById('message-form'),
     startChatForm: document.getElementById('start-chat-form'),
     peerEmailInput: document.getElementById('peer-email'),
-    googleBtn: document.getElementById('google-login'),
+    googleLoginContainer: document.getElementById('google-login-container'),
     logoutBtn: document.getElementById('logout'),
 };
 
@@ -78,7 +78,7 @@ function updateAuthStatus() {
 
 function toggleAuthButtons() {
     const signedIn = Boolean(state.currentUser);
-    els.googleBtn.hidden = signedIn;
+    els.googleLoginContainer.style.display = signedIn ? 'none' : 'block';
     els.logoutBtn.hidden = !signedIn;
 }
 
@@ -204,39 +204,54 @@ function googleReadyPromise(timeoutMs = 20000, intervalMs = 100) {
     return state.googleReady;
 }
 
+function handleCredentialResponse(response) {
+    const payload = decodeJwt(response.credential);
+    if (!payload?.email) return;
+    setCurrentUser({
+        email: payload.email,
+        name: payload.name || payload.given_name || payload.family_name || 'Google User',
+        picture: payload.picture,
+        provider: 'google',
+    });
+}
+
 function initGoogle() {
     if (!GOOGLE_CLIENT_ID || GOOGLE_CLIENT_ID.startsWith('YOUR_')) {
-        els.googleBtn.disabled = true;
-        els.googleBtn.title = 'Set GOOGLE_CLIENT_ID in app.js to enable Google login';
+        els.googleLoginContainer.innerHTML = '<span style="color:#99a1b3">Google login not configured</span>';
         return;
     }
-    els.googleBtn.textContent = 'Loading Google...';
-    els.googleBtn.disabled = true;
+    els.googleLoginContainer.innerHTML = '<span style="color:#99a1b3">Loading Google...</span>';
     googleReadyPromise()
         .then(() => {
+            // Initialize Google Identity Services
             window.google.accounts.id.initialize({
                 client_id: GOOGLE_CLIENT_ID,
-                callback: (response) => {
-                    const payload = decodeJwt(response.credential);
-                    if (!payload?.email) return;
-                    setCurrentUser({
-                        email: payload.email,
-                        name: payload.name || payload.given_name || payload.family_name || 'Google User',
-                        picture: payload.picture,
-                        provider: 'google',
-                    });
-                },
+                callback: handleCredentialResponse,
             });
-            els.googleBtn.textContent = 'Login with Google';
-            els.googleBtn.disabled = Boolean(state.currentUser);
-            els.googleBtn.addEventListener('click', () => {
+
+            // Clear the loading text
+            els.googleLoginContainer.innerHTML = '';
+
+            // Render the official Google Sign-In button
+            window.google.accounts.id.renderButton(
+                els.googleLoginContainer,
+                {
+                    type: 'standard',
+                    theme: 'outline',
+                    size: 'large',
+                    text: 'signin_with',
+                    shape: 'pill',
+                }
+            );
+
+            // Also display One Tap prompt (optional, for better UX)
+            if (!state.currentUser) {
                 window.google.accounts.id.prompt();
-            });
+            }
         })
         .catch((err) => {
             console.warn(err.message);
-            els.googleBtn.textContent = 'Google login unavailable';
-            els.googleBtn.disabled = true;
+            els.googleLoginContainer.innerHTML = '<span style="color:#ff7b7b">Google login unavailable</span>';
         });
 }
 
