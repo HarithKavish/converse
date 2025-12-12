@@ -6,6 +6,7 @@ const state = {
     currentUser: null,
     peerEmail: null,
     messages: loadMessages(),
+    googleReady: null,
 };
 
 const els = {
@@ -166,42 +167,41 @@ function decodeJwt(token) {
     }
 }
 
-function waitForGoogleClient(timeoutMs = 5000, intervalMs = 100) {
-    return new Promise((resolve, reject) => {
+function googleReadyPromise(timeoutMs = 20000, intervalMs = 100) {
+    if (state.googleReady) return state.googleReady;
+    state.googleReady = new Promise((resolve, reject) => {
         const started = Date.now();
+
+        function check() {
+            if (window.google?.accounts?.id) {
+                resolve(true);
+                return true;
+            }
+            if (Date.now() - started > timeoutMs) {
+                reject(new Error('Google Identity Services script not ready'));
+                return true;
+            }
+            return false;
+        }
+
+        // First immediate check
+        if (check()) return;
+
         const timer = setInterval(() => {
+            if (check()) {
+                clearInterval(timer);
+            }
+        }, intervalMs);
+
+        // If the GIS script tag fires onload, we resolve quickly.
+        window.onGoogleLibraryLoad = () => {
             if (window.google?.accounts?.id) {
                 clearInterval(timer);
                 resolve(true);
-            } else if (Date.now() - started > timeoutMs) {
-                clearInterval(timer);
-                reject(new Error('Google Identity Services script not ready'));
             }
-        }, intervalMs);
+        };
     });
-}
-
-function ensureGoogleScript(timeoutMs = 20000) {
-    return new Promise((resolve, reject) => {
-        if (window.google?.accounts?.id) {
-            resolve(true);
-            return;
-        }
-
-        const existing = document.querySelector('script[src="https://accounts.google.com/gsi/client"]');
-        if (!existing) {
-            const script = document.createElement('script');
-            script.src = 'https://accounts.google.com/gsi/client';
-            script.async = true;
-            script.defer = true;
-            script.onload = () => resolve(true);
-            script.onerror = () => reject(new Error('Failed to load Google Identity Services script'));
-            document.head.appendChild(script);
-        }
-
-        // Also wait for global to appear in case onload doesn't fire due to caching.
-        waitForGoogleClient(timeoutMs).then(resolve).catch(reject);
-    });
+    return state.googleReady;
 }
 
 function initGoogle() {
@@ -212,7 +212,7 @@ function initGoogle() {
     }
     els.googleBtn.textContent = 'Loading Google...';
     els.googleBtn.disabled = true;
-    ensureGoogleScript()
+    googleReadyPromise()
         .then(() => {
             window.google.accounts.id.initialize({
                 client_id: GOOGLE_CLIENT_ID,
