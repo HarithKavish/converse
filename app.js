@@ -1,12 +1,19 @@
-// Basic frontend-only chat with Google login and local storage.
+// Basic frontend-only chat with Google login and Google Drive appData storage.
 
 const GOOGLE_CLIENT_ID = '59648450302-sqkk4pdujkt4hrm0uuhq95pq55b4jg2k.apps.googleusercontent.com';
+const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.appdata';
+const DRIVE_FILE_NAME = 'chat_history.json';
 
 const state = {
     currentUser: null,
     peerEmail: null,
     messages: loadMessages(),
     googleReady: null,
+    drive: {
+        accessToken: null,
+        fileId: null,
+        status: 'idle',
+    },
 };
 
 const els = {
@@ -34,6 +41,11 @@ function loadMessages() {
 
 function persistMessages() {
     localStorage.setItem('chat-app-messages', JSON.stringify(state.messages));
+}
+
+function setDriveStatus(status) {
+    state.drive.status = status;
+    updateAuthStatus();
 }
 
 function chatKey(emailA, emailB) {
@@ -73,7 +85,13 @@ function renderUserCard() {
 }
 
 function updateAuthStatus() {
-    els.status.textContent = state.currentUser ? 'Signed in' : 'Signed out';
+    if (!state.currentUser) {
+        els.status.textContent = 'Signed out';
+        return;
+    }
+    const driveState = state.drive.status;
+    const driveLabel = driveState === 'idle' ? 'Drive idle' : `Drive ${driveState}`;
+    els.status.textContent = `Signed in • ${driveLabel}`;
 }
 
 function toggleAuthButtons() {
@@ -91,6 +109,12 @@ function setPeer(email) {
     } else {
         localStorage.removeItem('chat-app-peer');
     }
+}
+
+function setMessages(newMessages) {
+    state.messages = newMessages || {};
+    persistMessages();
+    renderMessages();
 }
 
 function renderMessages() {
@@ -135,6 +159,8 @@ function appendMessage(text) {
     });
     persistMessages();
     renderMessages();
+    // Best-effort cloud sync (not awaited to keep UI snappy)
+    syncToDrive().catch((err) => console.warn('Drive sync failed', err));
 }
 
 function handleSend(e) {
@@ -213,6 +239,8 @@ function handleCredentialResponse(response) {
         picture: payload.picture,
         provider: 'google',
     });
+    // After sign-in, bootstrap Drive storage and hydrate messages
+    bootstrapDriveSync();
 }
 
 // Make callback globally accessible for HTML API
@@ -244,6 +272,7 @@ function logout() {
         window.google.accounts.id.revoke(state.currentUser.email, () => { });
     }
     setCurrentUser(null);
+    state.drive = { accessToken: null, fileId: null, status: 'idle' };
 }
 
 function initUI() {
@@ -282,8 +311,185 @@ window.addEventListener('beforeunload', () => {
 function main() {
     initUI();
     restoreLastSession();
+    if (state.currentUser) {
+        bootstrapDriveSync();
+    }
     initGoogle();
     renderMessages();
+}
+
+// -------- Google Drive appData helpers --------
+let tokenClient;
+
+function ensureTokenClient() {
+    if (tokenClient) return tokenClient;
+    tokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: GOOGLE_CLIENT_ID,
+        scope: DRIVE_SCOPE,
+        prompt: '',
+        callback: (resp) => {
+            if (resp.error) {
+                tokenRequestReject && tokenRequestReject(resp);
+            } else {
+                tokenRequestResolve && tokenRequestResolve(resp.access_token);
+            }
+            tokenRequestResolve = null;
+            tokenRequestReject = null;
+        },
+    });
+    return tokenClient;
+}
+
+let tokenRequestResolve = null;
+let tokenRequestReject = null;
+
+function requestDriveToken() {
+    return new Promise((resolve, reject) => {
+        tokenRequestResolve = resolve;
+        tokenRequestReject = reject;
+        ensureTokenClient().requestAccessToken({ prompt: '' });
+    });
+}
+
+async function getAccessToken() {
+    if (state.drive.accessToken) return state.drive.accessToken;
+    await googleReadyPromise();
+    setDriveStatus('auth');
+    const token = await requestDriveToken();
+    state.drive.accessToken = token;
+    setDriveStatus('idle');
+    return token;
+}
+
+async function driveFetch(url, options = {}) {
+    const token = await getAccessToken();
+    const resp = await fetch(url, {
+        ...options,
+        headers: {
+            Authorization: `Bearer ${token}`,
+            ...(options.headers || {}),
+        },
+    });
+    if (!resp.ok) {
+        throw new Error(`Drive API error ${resp.status}`);
+    }
+    return resp;
+}
+
+async function findDriveFileId() {
+    if (state.drive.fileId) return state.drive.fileId;
+    const q = encodeURIComponent(`name='${DRIVE_FILE_NAME}' and 'appDataFolder' in parents`);
+    const resp = await driveFetch(`https://www.googleapis.com/drive/v3/files?q=${q}&spaces=appDataFolder&fields=files(id,name)`);
+    const data = await resp.json();
+    const file = data.files?.[0];
+    if (file?.id) {
+        state.drive.fileId = file.id;
+        return file.id;
+    }
+    return null;
+}
+
+async function createDriveFile(initialData = {}) {
+    const metadata = {
+        name: DRIVE_FILE_NAME,
+        parents: ['appDataFolder'],
+    };
+    const body = buildMultipartBody(metadata, initialData);
+    const resp = await driveFetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id', {
+        method: 'POST',
+        headers: { 'Content-Type': body.type },
+        body,
+    });
+    const json = await resp.json();
+    state.drive.fileId = json.id;
+    return json.id;
+}
+
+function buildMultipartBody(metadata, jsonContent) {
+    const boundary = '-------314159265358979323846';
+    const delimiter = `\r\n--${boundary}\r\n`;
+    const closeDelimiter = `\r\n--${boundary}--`;
+    const body =
+        delimiter +
+        'Content-Type: application/json; charset=UTF-8\r\n\r\n' +
+        JSON.stringify(metadata) +
+        delimiter +
+        'Content-Type: application/json; charset=UTF-8\r\n\r\n' +
+        JSON.stringify(jsonContent) +
+        closeDelimiter;
+    const blob = new Blob([body], { type: `multipart/related; boundary="${boundary}"` });
+    return blob;
+}
+
+async function readDriveFile(fileId) {
+    const resp = await driveFetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`);
+    return resp.json();
+}
+
+async function writeDriveFile(fileId, data) {
+    const metadata = { name: DRIVE_FILE_NAME };
+    const body = buildMultipartBody(metadata, data);
+    await driveFetch(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=multipart`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': body.type },
+        body,
+    });
+}
+
+async function ensureDriveFile() {
+    setDriveStatus('syncing');
+    let fileId = await findDriveFileId();
+    if (!fileId) {
+        fileId = await createDriveFile({});
+    }
+    setDriveStatus('idle');
+    return fileId;
+}
+
+async function syncFromDrive() {
+    if (!state.currentUser) return;
+    try {
+        setDriveStatus('syncing');
+        const fileId = await ensureDriveFile();
+        const remote = await readDriveFile(fileId);
+        if (remote && typeof remote === 'object') {
+            setMessages(remote);
+        } else if (Object.keys(state.messages || {}).length) {
+            // Remote empty but local has data; push it up.
+            await writeDriveFile(fileId, state.messages);
+        }
+    } catch (err) {
+        console.warn('Failed to sync from Drive', err);
+        setDriveStatus('error');
+    } finally {
+        setDriveStatus('idle');
+    }
+}
+
+async function syncToDrive() {
+    if (!state.currentUser) return;
+    try {
+        setDriveStatus('syncing');
+        const fileId = await ensureDriveFile();
+        await writeDriveFile(fileId, state.messages || {});
+    } catch (err) {
+        console.warn('Failed to sync to Drive', err);
+        setDriveStatus('error');
+        throw err;
+    } finally {
+        setDriveStatus('idle');
+    }
+}
+
+async function bootstrapDriveSync() {
+    if (!state.currentUser) return;
+    try {
+        await googleReadyPromise();
+        await syncFromDrive();
+    } catch (err) {
+        console.warn('Drive bootstrap failed', err);
+        setDriveStatus('error');
+    }
 }
 
 main();
