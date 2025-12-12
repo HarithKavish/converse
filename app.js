@@ -181,7 +181,7 @@ function waitForGoogleClient(timeoutMs = 5000, intervalMs = 100) {
     });
 }
 
-function ensureGoogleScript(timeoutMs = 15000) {
+function ensureGoogleScript(timeoutMs = 20000) {
     return new Promise((resolve, reject) => {
         if (window.google?.accounts?.id) {
             resolve(true);
@@ -192,6 +192,7 @@ function ensureGoogleScript(timeoutMs = 15000) {
         if (!existing) {
             const script = document.createElement('script');
             script.src = 'https://accounts.google.com/gsi/client';
+            script.crossOrigin = 'anonymous';
             script.async = true;
             script.defer = true;
             script.onload = () => resolve(true);
