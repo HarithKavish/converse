@@ -332,8 +332,9 @@ async function handleSyncClick() {
         await bootstrapDriveSync();
         hideSyncButton();
     } catch (err) {
-        console.warn('Sync failed', err);
-        alert('Drive sync failed. Please try again.');
+        console.error('Sync failed:', err);
+        const msg = err?.error || err?.message || 'Unknown error';
+        alert(`Drive sync failed: ${msg}\n\nPlease check:\n1. Drive API is enabled\n2. JavaScript origin (https://harithkavish.github.io) is authorized\n3. OAuth consent screen is complete`);
     }
 }
 
@@ -409,11 +410,19 @@ let tokenRequestReject = null;
 function requestDriveToken() {
     return new Promise((resolve, reject) => {
         tokenRequestResolve = resolve;
-        tokenRequestReject = reject;
-        ensureTokenClient().requestAccessToken({
-            prompt: 'consent',
-            include_granted_scopes: true,
-        });
+        tokenRequestReject = (err) => {
+            console.error('Drive token request failed:', err);
+            reject(err);
+        };
+        try {
+            ensureTokenClient().requestAccessToken({
+                prompt: 'consent',
+                include_granted_scopes: true,
+            });
+        } catch (err) {
+            console.error('Failed to request token:', err);
+            reject(err);
+        }
     });
 }
 
