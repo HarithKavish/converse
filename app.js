@@ -11,6 +11,7 @@ const state = {
     googleReady: null,
     drive: {
         accessToken: null,
+        expiresAt: null,
         fileId: null,
         status: 'idle',
     },
@@ -41,6 +42,32 @@ function loadMessages() {
 
 function persistMessages() {
     localStorage.setItem('chat-app-messages', JSON.stringify(state.messages));
+}
+
+function persistDriveToken(token, expiresInSeconds) {
+    const expiresAt = Date.now() + (expiresInSeconds || 3600) * 1000 - 30000; // 30s safety window
+    state.drive.accessToken = token;
+    state.drive.expiresAt = expiresAt;
+    localStorage.setItem('chat-drive-token', token);
+    localStorage.setItem('chat-drive-token-exp', String(expiresAt));
+}
+
+function restoreDriveToken() {
+    try {
+        const token = localStorage.getItem('chat-drive-token');
+        const expRaw = localStorage.getItem('chat-drive-token-exp');
+        if (!token || !expRaw) return;
+        const exp = Number(expRaw);
+        if (Number.isFinite(exp) && exp > Date.now() + 5000) {
+            state.drive.accessToken = token;
+            state.drive.expiresAt = exp;
+        } else {
+            localStorage.removeItem('chat-drive-token');
+            localStorage.removeItem('chat-drive-token-exp');
+        }
+    } catch (err) {
+        console.warn('Failed to restore drive token', err);
+    }
 }
 
 function setDriveStatus(status) {
@@ -272,7 +299,9 @@ function logout() {
         window.google.accounts.id.revoke(state.currentUser.email, () => { });
     }
     setCurrentUser(null);
-    state.drive = { accessToken: null, fileId: null, status: 'idle' };
+    state.drive = { accessToken: null, expiresAt: null, fileId: null, status: 'idle' };
+    localStorage.removeItem('chat-drive-token');
+    localStorage.removeItem('chat-drive-token-exp');
     hideSyncButton();
 }
 
@@ -337,6 +366,7 @@ window.addEventListener('beforeunload', () => {
 function main() {
     initUI();
     restoreLastSession();
+    restoreDriveToken();
     if (state.currentUser) {
         // If we have a cached token, try silent sync; otherwise show sync button
         if (state.drive.accessToken) {
@@ -357,11 +387,13 @@ function ensureTokenClient() {
     tokenClient = google.accounts.oauth2.initTokenClient({
         client_id: GOOGLE_CLIENT_ID,
         scope: DRIVE_SCOPE,
-        prompt: '',
+        include_granted_scopes: true,
+        prompt: 'consent',
         callback: (resp) => {
             if (resp.error) {
                 tokenRequestReject && tokenRequestReject(resp);
             } else {
+                persistDriveToken(resp.access_token, resp.expires_in);
                 tokenRequestResolve && tokenRequestResolve(resp.access_token);
             }
             tokenRequestResolve = null;
@@ -378,16 +410,20 @@ function requestDriveToken() {
     return new Promise((resolve, reject) => {
         tokenRequestResolve = resolve;
         tokenRequestReject = reject;
-        ensureTokenClient().requestAccessToken({ prompt: '' });
+        ensureTokenClient().requestAccessToken({
+            prompt: 'consent',
+            include_granted_scopes: true,
+        });
     });
 }
 
 async function getAccessToken() {
-    if (state.drive.accessToken) return state.drive.accessToken;
+    if (state.drive.accessToken && state.drive.expiresAt && state.drive.expiresAt > Date.now() + 5000) {
+        return state.drive.accessToken;
+    }
     await googleReadyPromise();
     setDriveStatus('auth');
     const token = await requestDriveToken();
-    state.drive.accessToken = token;
     setDriveStatus('idle');
     return token;
 }
