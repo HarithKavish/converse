@@ -512,6 +512,8 @@ function main() {
         }
         initGoogle();
         renderMessages();
+        // Refresh recent chats after UI is fully ready
+        renderRecentChats().catch(err => console.warn('Failed to render recent chats:', err));
     }, 100);
 }
 
