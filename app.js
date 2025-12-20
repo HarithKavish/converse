@@ -98,6 +98,10 @@ function chatKey(emailA, emailB) {
 
 function setCurrentUser(user) {
     state.currentUser = user;
+    // Clear peer when user logs out
+    if (!user) {
+        setPeer(null);
+    }
     renderUserCard();
     updateAuthStatus();
     toggleAuthButtons();
