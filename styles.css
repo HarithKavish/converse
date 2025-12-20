@@ -53,6 +53,8 @@ body.dark-mode {
     margin: 0 auto;
     padding: 24px;
     min-height: calc(100vh - 160px);
+    display: flex;
+    flex-direction: column;
 }
 
 .topbar {
@@ -132,6 +134,8 @@ button#sync-drive {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 18px;
+    height: 100%;
+    flex: 1;
 }
 
 @media (max-width: 900px) {
@@ -184,7 +188,7 @@ body.dark-mode .panel {
 }
 
 .panel.info {
-    min-height: 750px;
+    height: 100%;
     display: flex;
     flex-direction: column;
     gap: 10px;
@@ -308,7 +312,7 @@ body.dark-mode .panel {
 .chat {
     display: flex;
     flex-direction: column;
-    min-height: 750px;
+    height: 100%;
     background: rgba(255, 255, 255, 0.7);
     backdrop-filter: blur(10px) saturate(180%);
     -webkit-backdrop-filter: blur(10px) saturate(180%);
