@@ -339,113 +339,78 @@ async function fetchPeerProfileFromGoogle(email) {
         return state.peerProfiles[email];
     }
 
-    // If no drive access token, fall back to email parsing
-    if (!state.drive.accessToken) {
-        const namePart = email.split('@')[0];
-        const displayName = namePart
-            .replace(/[0-9]+/g, '')
-            .split(/[._-]/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
-            || email;
-        const firstName = displayName.split(' ')[0];
+    // Extract name from email
+    const namePart = email.split('@')[0];
+    const displayName = namePart
+        .replace(/[0-9]+/g, '')
+        .split(/[._-]/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
+        || email;
+    const firstName = displayName.split(' ')[0];
 
-        const profile = { email, name: firstName, picture: '' };
-        state.peerProfiles[email] = profile;
-        persistPeerProfiles();
-        return profile;
-    }
+    const profile = {
+        email: email,
+        name: firstName,
+        picture: ''
+    };
 
-    try {
-        // Fetch person's actual Google Account profile using People API
-        const response = await fetch(
-            `https://people.googleapis.com/v1/people:searchContacts?query=${encodeURIComponent(email)}&readMask=names,photos,emailAddresses`,
-            {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${state.drive.accessToken}`,
-                    'Content-Type': 'application/json'
+    // Try People API if we have access token (this will find contacts)
+    if (state.drive.accessToken) {
+        try {
+            const response = await fetch(
+                `https://people.googleapis.com/v1/people:searchContacts?query=${encodeURIComponent(email)}&readMask=names,photos,emailAddresses`,
+                {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${state.drive.accessToken}`,
+                        'Content-Type': 'application/json'
+                    }
+                }
+            );
+
+            if (response.ok) {
+                const data = await response.json();
+                const results = data.results || [];
+                if (results.length > 0) {
+                    const person = results[0].person;
+                    const fullName = person.names?.[0]?.displayName || email;
+                    const firstName = fullName.split(' ')[0];
+                    
+                    let photoUrl = '';
+                    if (person.photos && person.photos.length > 0) {
+                        photoUrl = person.photos[0].url || '';
+                    }
+
+                    profile.name = firstName;
+                    if (photoUrl) {
+                        profile.picture = photoUrl;
+                    }
                 }
             }
-        );
-
-        if (!response.ok) {
-            console.warn(`Failed to fetch profile for ${email}:`, response.status);
-            // Fall back to email parsing
-            const namePart = email.split('@')[0];
-            const displayName = namePart
-                .replace(/[0-9]+/g, '')
-                .split(/[._-]/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
-                || email;
-            const firstName = displayName.split(' ')[0];
-
-            const profile = { email, name: firstName, picture: '' };
-            state.peerProfiles[email] = profile;
-            persistPeerProfiles();
-            return profile;
+        } catch (err) {
+            console.debug('People API search failed:', err.message);
         }
+    }
 
-        const data = await response.json();
-        const results = data.results || [];
-
-        if (results.length === 0) {
-            // Fall back to email parsing
-            const namePart = email.split('@')[0];
-            const displayName = namePart
-                .replace(/[0-9]+/g, '')
-                .split(/[._-]/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
-                || email;
-            const firstName = displayName.split(' ')[0];
-
-            const profile = { email, name: firstName, picture: '' };
-            state.peerProfiles[email] = profile;
-            persistPeerProfiles();
-            return profile;
+    // If we still don't have a picture, try to get it from Gravatar using their query API
+    // Gravatar has a public lookup API that doesn't require hashing
+    if (!profile.picture) {
+        try {
+            const response = await fetch(`https://www.gravatar.com/${email}?format=json`);
+            if (response.ok) {
+                const data = await response.json();
+                if (data.entry && data.entry[0] && data.entry[0].photos && data.entry[0].photos[0]) {
+                    profile.picture = data.entry[0].photos[0].value;
+                }
+            }
+        } catch (err) {
+            console.debug('Gravatar lookup failed:', err.message);
         }
-
-        // Get actual name from Google Account profile
-        const person = results[0].person;
-        const fullName = person.names?.[0]?.displayName || email;
-        const firstName = fullName.split(' ')[0]; // Get first name only
-
-        const profile = {
-            email: email,
-            name: firstName,
-            picture: person.photos?.[0]?.url || ''
-        };
-
-        // Cache it
-        state.peerProfiles[email] = profile;
-        persistPeerProfiles();
-
-        return profile;
-    } catch (err) {
-        console.warn('Failed to fetch peer profile from Google:', err);
-        // Fall back to email parsing
-        const namePart = email.split('@')[0];
-        const displayName = namePart
-            .replace(/[0-9]+/g, '')
-            .split(/[._-]/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
-            || email;
-        const firstName = displayName.split(' ')[0];
-
-        const profile = { email, name: firstName, picture: '' };
-        state.peerProfiles[email] = profile;
-        persistPeerProfiles();
-        return profile;
     }
-}
 
-function initUI() {
-    if (els.messageForm) els.messageForm.addEventListener('submit', handleSend);
-    if (els.startChatForm) els.startChatForm.addEventListener('submit', handleStartChat);
-    els.syncBtn = document.getElementById('sync-drive');
-    els.syncBtn?.addEventListener('click', handleSyncClick);
-    toggleAuthButtons();
-}
-
-function showSyncButton() {
-    if (els.syncBtn) {
-        els.syncBtn.hidden = false;
-    }
+    // Cache it
+    state.peerProfiles[email] = profile;
+    persistPeerProfiles();
+    return profile;
 }
 
 function hideSyncButton() {
