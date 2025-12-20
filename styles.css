@@ -39,6 +39,8 @@ body {
     background: var(--shell-bg-light);
     background-attachment: fixed;
     color: var(--text);
+    padding-top: 80px;
+    padding-bottom: 80px;
 }
 
 body.dark-mode {
@@ -50,6 +52,7 @@ body.dark-mode {
     max-width: 1200px;
     margin: 0 auto;
     padding: 24px;
+    min-height: calc(100vh - 160px);
 }
 
 .topbar {
@@ -129,6 +132,25 @@ button#sync-drive {
     display: grid;
     grid-template-columns: 320px 1fr;
     gap: 18px;
+}
+
+@media (max-width: 768px) {
+    .layout {
+        grid-template-columns: 1fr;
+    }
+
+    .panel.info {
+        display: none;
+    }
+
+    body {
+        padding-top: 60px;
+        padding-bottom: 60px;
+    }
+
+    .page {
+        padding: 16px;
+    }
 }
 
 .panel {
