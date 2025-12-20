@@ -510,6 +510,25 @@ function main() {
 
     initUI();
 
+    // Verify sync after a brief delay to ensure header had time to update storage
+    setTimeout(() => {
+        const currentSharedUser = localStorage.getItem('harith_google_user');
+        if (currentSharedUser && !state.currentUser) {
+            console.log('Syncing from shared storage after delay');
+            try {
+                const sharedUser = JSON.parse(currentSharedUser);
+                setCurrentUser({
+                    email: sharedUser.email,
+                    name: sharedUser.name,
+                    picture: sharedUser.picture,
+                    provider: 'google'
+                });
+            } catch (err) {
+                console.warn('Failed to sync user from shared storage:', err);
+            }
+        }
+    }, 100);
+
     // Small delay for Drive token management and Google init
     setTimeout(() => {
         if (state.currentUser) {
