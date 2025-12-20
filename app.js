@@ -153,6 +153,10 @@ function toggleAuthButtons() {
 function setPeer(email) {
     state.peerEmail = email;
     els.peerLabel.textContent = email || 'No peer selected';
+    // Clear input field when peer is cleared
+    if (els.peerEmailInput) {
+        els.peerEmailInput.value = email || '';
+    }
     renderMessages();
     if (email) {
         localStorage.setItem('chat-app-peer', email);
