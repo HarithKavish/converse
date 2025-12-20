@@ -698,6 +698,17 @@ function getRecentChats() {
                 peerPicture = state.peerProfiles[peerEmail].picture;
             }
 
+            // Fallback: extract name from email (part before @)
+            if (peerName === peerEmail) {
+                const namePart = peerEmail.split('@')[0];
+                // Convert format like "harithkavish97" to "Harith Kavish"
+                peerName = namePart
+                    .replace(/[0-9]+/g, '') // Remove numbers
+                    .replace(/([a-z])([A-Z])/g, '$1 $2') // Handle camelCase
+                    .split(/[._-]/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') // Capitalize each word
+                    || peerEmail;
+            }
+
             if (!recentChatsMap[peerEmail] || recentChatsMap[peerEmail].timestamp < timestamp) {
                 recentChatsMap[peerEmail] = {
                     email: peerEmail,
