@@ -26,6 +26,34 @@ body {
     color: var(--text);
 }
 
+/* Light theme support */
+body.light-mode,
+body:not(.dark-mode) {
+    --bg: #f5f7fa;
+    --panel: #ffffff;
+    --panel-2: #f0f2f5;
+    --text: #222;
+    --muted: #666;
+    --accent: #2563eb;
+    --danger: #dc2626;
+    --border: #e0e0e0;
+    background: radial-gradient(circle at 20% 20%, rgba(37, 99, 235, 0.08), transparent 25%),
+        radial-gradient(circle at 80% 0%, rgba(220, 38, 38, 0.08), transparent 22%),
+        #f5f7fa;
+    color: var(--text);
+}
+
+body.dark-mode {
+    --bg: #0b0c10;
+    --panel: #11131a;
+    --panel-2: #161925;
+    --text: #f4f6fb;
+    --muted: #99a1b3;
+    --accent: #6dd3ff;
+    --danger: #ff7b7b;
+    --border: #1f2433;
+}
+
 .page {
     max-width: 1200px;
     margin: 0 auto;
