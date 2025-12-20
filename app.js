@@ -289,6 +289,10 @@ function handleCredentialResponse(response) {
     });
     // Show sync button for user to trigger Drive access (popup requires user gesture)
     showSyncButton();
+    // Auto-sync from Drive after sign-in
+    setTimeout(() => {
+        bootstrapDriveSync().catch(err => console.warn('Auto-sync failed:', err));
+    }, 500);
 }
 
 // Make callback globally accessible for HTML API
