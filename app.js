@@ -477,17 +477,18 @@ window.addEventListener('storage', (event) => {
 });
 
 function main() {
+    // Restore session BEFORE initializing UI to prevent "Not signed in" flash
+    restoreLastSession();
+    restoreDriveToken();
+
+    // Debug log
+    const sharedUser = localStorage.getItem('harith_google_user');
+    console.log('Shared user on restore:', sharedUser ? 'Found' : 'Not found');
+
     initUI();
 
-    // Small delay to ensure DOM is fully ready
+    // Small delay for Drive token management and Google init
     setTimeout(() => {
-        restoreLastSession();
-        restoreDriveToken();
-
-        // Debug log
-        const sharedUser = localStorage.getItem('harith_google_user');
-        console.log('Shared user on restore:', sharedUser ? 'Found' : 'Not found');
-
         if (state.currentUser) {
             // If we have a cached token, try silent sync
             if (state.drive.accessToken) {
