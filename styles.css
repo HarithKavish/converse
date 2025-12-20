@@ -185,6 +185,9 @@ body.dark-mode .panel {
 
 .panel.info {
     min-height: 600px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
 }
 
 .section-header {
@@ -498,7 +501,7 @@ body.dark-mode .messages .from-them {
     display: flex;
     flex-direction: column;
     gap: 8px;
-    max-height: 300px;
+    flex: 1;
     overflow-y: auto;
     padding-right: 8px;
 }
