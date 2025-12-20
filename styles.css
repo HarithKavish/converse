@@ -1,4 +1,20 @@
 :root {
+    /* Default to Light Theme */
+    --bg: #f5f7fa;
+    --panel: #ffffff;
+    --panel-2: #f0f2f5;
+    --text: #222;
+    --muted: #666;
+    --accent: #2563eb;
+    --danger: #dc2626;
+    --border: #e0e0e0;
+    --radius: 14px;
+    --shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+    --font: 'Space Grotesk', 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* Dark Theme */
+body.dark-mode {
     --bg: #0b0c10;
     --panel: #11131a;
     --panel-2: #161925;
@@ -7,9 +23,7 @@
     --accent: #6dd3ff;
     --danger: #ff7b7b;
     --border: #1f2433;
-    --radius: 14px;
     --shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
-    --font: 'Space Grotesk', 'Helvetica Neue', Arial, sans-serif;
 }
 
 * {
@@ -20,38 +34,16 @@ body {
     margin: 0;
     min-height: 100vh;
     font-family: var(--font);
-    background: radial-gradient(circle at 20% 20%, rgba(109, 211, 255, 0.08), transparent 25%),
-        radial-gradient(circle at 80% 0%, rgba(255, 123, 123, 0.08), transparent 22%),
+    background: radial-gradient(circle at 20% 20%, rgba(37, 99, 235, 0.08), transparent 25%),
+        radial-gradient(circle at 80% 0%, rgba(220, 38, 38, 0.08), transparent 22%),
         var(--bg);
     color: var(--text);
 }
 
-/* Light theme support */
-body.light-mode,
-body:not(.dark-mode) {
-    --bg: #f5f7fa;
-    --panel: #ffffff;
-    --panel-2: #f0f2f5;
-    --text: #222;
-    --muted: #666;
-    --accent: #2563eb;
-    --danger: #dc2626;
-    --border: #e0e0e0;
-    background: radial-gradient(circle at 20% 20%, rgba(37, 99, 235, 0.08), transparent 25%),
-        radial-gradient(circle at 80% 0%, rgba(220, 38, 38, 0.08), transparent 22%),
-        #f5f7fa;
-    color: var(--text);
-}
-
 body.dark-mode {
-    --bg: #0b0c10;
-    --panel: #11131a;
-    --panel-2: #161925;
-    --text: #f4f6fb;
-    --muted: #99a1b3;
-    --accent: #6dd3ff;
-    --danger: #ff7b7b;
-    --border: #1f2433;
+    background: radial-gradient(circle at 20% 20%, rgba(109, 211, 255, 0.08), transparent 25%),
+        radial-gradient(circle at 80% 0%, rgba(255, 123, 123, 0.08), transparent 22%),
+        var(--bg);
 }
 
 .page {
@@ -200,7 +192,7 @@ button#sync-drive {
 .input-with-button {
     display: flex;
     align-items: center;
-    background: #0f1119;
+    background: var(--panel-2);
     border: 1px solid var(--border);
     border-radius: var(--radius);
     padding: 2px;
@@ -241,7 +233,7 @@ button#sync-drive {
 .start-form input,
 .message-form input {
     width: 100%;
-    background: #0f1119;
+    background: var(--panel-2);
     border: 1px solid var(--border);
     border-radius: var(--radius);
     padding: 10px 12px;
@@ -265,6 +257,10 @@ button#sync-drive {
     display: flex;
     flex-direction: column;
     min-height: 520px;
+    background: var(--panel);
+}
+
+body.dark-mode .chat {
     background: linear-gradient(145deg, #0f131c, #0d1119 45%, #0b0e16);
 }
 
@@ -332,12 +328,21 @@ button#sync-drive {
 
 .messages .from-me {
     align-self: flex-end;
+    background: linear-gradient(135deg, var(--panel-2), var(--panel));
+    border-color: rgba(37, 99, 235, 0.35);
+}
+
+body.dark-mode .messages .from-me {
     background: linear-gradient(135deg, #1b2334, #131a27);
     border-color: rgba(109, 211, 255, 0.35);
 }
 
 .messages .from-them {
     align-self: flex-start;
+    background: var(--panel-2);
+}
+
+body.dark-mode .messages .from-them {
     background: #111522;
 }
 
