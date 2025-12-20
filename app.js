@@ -388,9 +388,9 @@ async function fetchPeerProfileFromGoogle(email) {
 }
 
 function initUI() {
-    els.messageForm.addEventListener('submit', handleSend);
-    els.startChatForm.addEventListener('submit', handleStartChat);
-    els.logoutBtn.addEventListener('click', logout);
+    if (els.messageForm) els.messageForm.addEventListener('submit', handleSend);
+    if (els.startChatForm) els.startChatForm.addEventListener('submit', handleStartChat);
+    if (els.logoutBtn) els.logoutBtn.addEventListener('click', logout);
     els.syncBtn = document.getElementById('sync-drive');
     els.syncBtn?.addEventListener('click', handleSyncClick);
     toggleAuthButtons();
