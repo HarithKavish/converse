@@ -8,38 +8,33 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://harithkavish.github.io/style.css" />
     <link rel="stylesheet" href="styles.css" />
     <!-- Google Identity Services -->
     <script src="https://accounts.google.com/gsi/client" async defer
         onload="window.onGoogleLibraryLoad && window.onGoogleLibraryLoad();"></script>
+    <script src="https://harithkavish.github.io/script.js" defer></script>
     <meta name="google-site-verification" content="SdeY2poCFNBw9AeQhlC5LVYL7NzT0lSyjJR8xMHkto8" />
 </head>
 
 <body>
-    <div class="page">
-        <header class="topbar">
-            <div class="brand">
-                <div class="dot"></div>
-                <div class="title">Offline-first Chat</div>
-            </div>
-            <div class="auth">
-                <div id="g_id_onload"
-                    data-client_id="59648450302-sqkk4pdujkt4hrm0uuhq95pq55b4jg2k.apps.googleusercontent.com"
-                    data-callback="handleCredentialResponse" data-auto_prompt="false">
-                </div>
-                <div id="google-login-container" class="g_id_signin" data-type="standard" data-size="large"
-                    data-theme="outline" data-text="signin_with" data-shape="pill"
-                    data-client_id="59648450302-sqkk4pdujkt4hrm0uuhq95pq55b4jg2k.apps.googleusercontent.com">
-                </div>
-                <button id="sync-drive" class="ghost" hidden>Sync to Drive</button>
-                <button id="logout" class="ghost ghost-danger" hidden>Logout</button>
-            </div>
-        </header>
+    <div id="sharedHeader"></div>
+    <main class="page">
 
-        <main class="layout">
+        <div class="layout">
             <section class="panel info">
                 <div class="section-header">Current User</div>
                 <div id="user-card" class="user-card empty">Not signed in</div>
+                <div class="auth">
+                    <div id="g_id_onload"
+                        data-client_id="59648450302-sqkk4pdujkt4hrm0uuhq95pq55b4jg2k.apps.googleusercontent.com"
+                        data-callback="handleCredentialResponse" data-auto_prompt="false"></div>
+                    <div id="google-login-container" class="g_id_signin" data-type="standard" data-size="large"
+                        data-theme="outline" data-text="signin_with" data-shape="pill"
+                        data-client_id="59648450302-sqkk4pdujkt4hrm0uuhq95pq55b4jg2k.apps.googleusercontent.com"></div>
+                    <button id="sync-drive" class="ghost" hidden>Sync to Drive</button>
+                    <button id="logout" class="ghost ghost-danger" hidden>Logout</button>
+                </div>
 
                 <div class="section-header">Start a Conversation</div>
                 <form id="start-chat-form" class="start-form">
@@ -74,8 +69,28 @@
                     <button type="submit">Send</button>
                 </form>
             </section>
-        </main>
-    </div>
+        </div>
+    </main>
+    <div id="sharedFooter"></div>
+    <script defer>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.HarithShell) {
+                HarithShell.renderHeader({
+                    target: '#sharedHeader',
+                    brand: {
+                        title: 'Offline-first Chat',
+                        tagline: 'Peer-to-peer chat with Drive persistence'
+                    }
+                });
+                HarithShell.renderFooter({
+                    target: '#sharedFooter',
+                    text: 'Harith Kavish'
+                });
+                const googleWrapper = document.querySelector('.shared-header__actions .google-button-wrapper');
+                googleWrapper?.remove();
+            }
+        });
+    </script>
     <script src="app.js"></script>
 </body>
 
