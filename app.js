@@ -139,8 +139,11 @@ function updateAuthStatus() {
 
 function toggleAuthButtons() {
     const signedIn = Boolean(state.currentUser);
-    // Google button is in header, so nothing to toggle here
-    els.logoutBtn.hidden = !signedIn;
+    // Lazy-load logout button in case header injection hasn't happened yet
+    const logoutBtn = els.logoutBtn || document.getElementById('logout');
+    if (logoutBtn) {
+        logoutBtn.hidden = !signedIn;
+    }
 }
 
 function setPeer(email) {
@@ -393,6 +396,9 @@ function initUI() {
     if (els.logoutBtn) els.logoutBtn.addEventListener('click', logout);
     els.syncBtn = document.getElementById('sync-drive');
     els.syncBtn?.addEventListener('click', handleSyncClick);
+    // Update logoutBtn reference if it was created by header injection
+    els.logoutBtn = document.getElementById('logout');
+    if (els.logoutBtn) els.logoutBtn.addEventListener('click', logout);
     toggleAuthButtons();
 }
 
