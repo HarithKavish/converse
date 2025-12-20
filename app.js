@@ -287,11 +287,14 @@ function handleCredentialResponse(response) {
         picture: payload.picture,
         provider: 'google',
     });
-    // Show sync button for user to trigger Drive access (popup requires user gesture)
-    showSyncButton();
-    // Auto-sync from Drive after sign-in
+    // Auto-sync from Drive after sign-in (will hide sync button on success)
     setTimeout(() => {
-        bootstrapDriveSync().catch(err => console.warn('Auto-sync failed:', err));
+        bootstrapDriveSync()
+            .then(() => hideSyncButton())
+            .catch(err => {
+                console.warn('Auto-sync failed:', err);
+                showSyncButton(); // Show button only if sync fails
+            });
     }, 500);
 }
 
