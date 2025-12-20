@@ -373,14 +373,13 @@ async function fetchPeerProfileFromGoogle(email) {
                 if (results.length > 0) {
                     const person = results[0].person;
                     const fullName = person.names?.[0]?.displayName || email;
-                    const firstName = fullName.split(' ')[0];
 
                     let photoUrl = '';
                     if (person.photos && person.photos.length > 0) {
                         photoUrl = person.photos[0].url || '';
                     }
 
-                    profile.name = firstName;
+                    profile.name = fullName;
                     if (photoUrl) {
                         profile.picture = photoUrl;
                     }
