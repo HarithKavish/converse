@@ -130,7 +130,7 @@ button#sync-drive {
     border: 1px dashed var(--border);
     border-radius: var(--radius);
     padding: 12px;
-    display: none;
+    display: flex;
     gap: 12px;
     align-items: center;
     background: var(--panel-2);
@@ -169,47 +169,6 @@ button#sync-drive {
     gap: 10px;
 }
 
-.input-with-button {
-    display: flex;
-    align-items: center;
-    background: #0f1119;
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 2px;
-}
-
-.input-with-button input {
-    flex: 1;
-    background: transparent;
-    border: none;
-    padding: 10px 12px;
-    color: var(--text);
-    font-size: 15px;
-}
-
-.input-with-button input:focus {
-    outline: none;
-}
-
-.input-with-button button {
-    background: transparent;
-    border: none;
-    padding: 10px 12px;
-    color: var(--accent);
-    cursor: pointer;
-    font-size: 18px;
-    transition: color 0.2s ease;
-    margin: 0;
-    align-self: auto;
-}
-
-.input-with-button button:hover {
-    color: var(--text);
-    border-color: transparent;
-    box-shadow: none;
-    transform: none;
-}
-
 .start-form input,
 .message-form input {
     width: 100%;
@@ -221,6 +180,7 @@ button#sync-drive {
     font-size: 15px;
 }
 
+.start-form button,
 .message-form button {
     align-self: flex-end;
 }
