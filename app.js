@@ -460,6 +460,23 @@ window.addEventListener('beforeunload', () => {
     }
 });
 
+// Watch for sign-in from shared header
+window.addEventListener('storage', (event) => {
+    if (event.key === 'harith_google_user' && event.newValue) {
+        try {
+            const sharedUser = JSON.parse(event.newValue);
+            setCurrentUser({
+                email: sharedUser.email,
+                name: sharedUser.name,
+                picture: sharedUser.picture,
+                provider: 'google'
+            });
+        } catch (err) {
+            console.warn('Failed to sync user from shared storage:', err);
+        }
+    }
+});
+
 function main() {
     initUI();
     restoreLastSession();
