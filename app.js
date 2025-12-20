@@ -108,6 +108,18 @@ function setCurrentUser(user) {
     renderRecentChats().catch(err => console.warn('Failed to render recent chats', err));
     if (user) {
         localStorage.setItem('chat-app-current-user', JSON.stringify(user));
+        // Automatically request Drive permissions when user signs in
+        // This ensures messages can be synced across devices
+        requestDriveToken()
+            .then(token => {
+                console.log('Drive token obtained for cross-device sync');
+                // Immediately bootstrap sync to load any messages from Drive
+                bootstrapDriveSync();
+            })
+            .catch(err => {
+                console.debug('Drive permission not granted (optional):', err.message);
+                // It's ok if Drive sync is skipped - local storage still works
+            });
     } else {
         localStorage.removeItem('chat-app-current-user');
     }
