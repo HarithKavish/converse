@@ -490,9 +490,23 @@ function restoreLastSession() {
             }
         }
         const peer = localStorage.getItem('chat-app-peer');
-        if (peer) setPeer(peer);
+        if (peer) {
+            setPeer(peer);
+        } else {
+            // No peer selected, ensure we're in peers view
+            initializeMobileLayout();
+        }
     } catch (err) {
         console.warn('Failed to restore session', err);
+    }
+}
+
+function initializeMobileLayout() {
+    const isMobile = window.innerWidth <= 900;
+    const layout = document.querySelector('.layout');
+    if (isMobile && layout) {
+        layout.classList.remove('show-chat');
+        layout.classList.add('show-peers');
     }
 }
 
@@ -546,6 +560,9 @@ function main() {
     console.log('Shared user on restore:', sharedUser ? 'Found' : 'Not found');
 
     initUI();
+    
+    // Render recent chats on page load
+    renderRecentChats().catch(err => console.warn('Failed to render recent chats on load:', err));
 
     // Small delay for Drive token management and Google init
     setTimeout(() => {

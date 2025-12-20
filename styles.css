@@ -141,23 +141,27 @@ button#sync-drive {
     }
     
     .layout.show-chat .panel.info {
-        display: none;
+        display: none !important;
     }
     
     .layout.show-chat .panel.chat {
-        display: flex;
+        display: flex !important;
     }
     
     .layout.show-peers .panel.chat {
-        display: none;
+        display: none !important;
     }
     
     .layout.show-peers .panel.info {
+        display: block !important;
+    }
+    
+    .layout:not(.show-chat):not(.show-peers) .panel.info {
         display: block;
     }
     
-    .panel.info {
-        display: block;
+    .layout:not(.show-chat):not(.show-peers) .panel.chat {
+        display: none;
     }
 }
 
