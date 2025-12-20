@@ -2,6 +2,7 @@
 
 const GOOGLE_CLIENT_ID = '59648450302-sqkk4pdujkt4hrm0uuhq95pq55b4jg2k.apps.googleusercontent.com';
 const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.appdata';
+const PEOPLE_SCOPE = 'https://www.googleapis.com/auth/contacts.readonly';
 const DRIVE_FILE_NAME = 'chat_history.json';
 
 const state = {
@@ -9,6 +10,7 @@ const state = {
     peerEmail: null,
     messages: loadMessages(),
     googleReady: null,
+    peerProfiles: loadPeerProfiles(),
     drive: {
         accessToken: null,
         expiresAt: null,
@@ -40,8 +42,22 @@ function loadMessages() {
     }
 }
 
+function loadPeerProfiles() {
+    try {
+        const raw = localStorage.getItem('chat-peer-profiles');
+        return raw ? JSON.parse(raw) : {};
+    } catch (err) {
+        console.warn('Failed to load peer profiles', err);
+        return {};
+    }
+}
+
 function persistMessages() {
     localStorage.setItem('chat-app-messages', JSON.stringify(state.messages));
+}
+
+function persistPeerProfiles() {
+    localStorage.setItem('chat-peer-profiles', JSON.stringify(state.peerProfiles));
 }
 
 function persistDriveToken(token, expiresInSeconds) {
@@ -87,7 +103,7 @@ function setCurrentUser(user) {
     updateAuthStatus();
     toggleAuthButtons();
     renderMessages();
-    renderRecentChats();
+    renderRecentChats().catch(err => console.warn('Failed to render recent chats', err));
     if (user) {
         localStorage.setItem('chat-app-current-user', JSON.stringify(user));
     } else {
@@ -143,7 +159,7 @@ function setMessages(newMessages) {
     state.messages = newMessages || {};
     persistMessages();
     renderMessages();
-    renderRecentChats();
+    renderRecentChats().catch(err => console.warn('Failed to render recent chats', err));
 }
 
 function renderMessages() {
@@ -190,7 +206,7 @@ function appendMessage(text) {
     });
     persistMessages();
     renderMessages();
-    renderRecentChats();
+    renderRecentChats().catch(err => console.warn('Failed to render recent chats', err));
     // Best-effort cloud sync (not awaited to keep UI snappy)
     syncToDrive().catch((err) => console.warn('Drive sync failed', err));
 }
@@ -310,6 +326,61 @@ function logout() {
     hideSyncButton();
 }
 
+async function fetchPeerProfileFromGoogle(email) {
+    // Check cache first
+    if (state.peerProfiles[email]) {
+        return state.peerProfiles[email];
+    }
+
+    // If no drive access token, return null
+    if (!state.drive.accessToken) {
+        return null;
+    }
+
+    try {
+        // Use Google's People API to search for contacts by email
+        const response = await fetch(
+            `https://people.googleapis.com/v1/people:searchContacts?query=${encodeURIComponent(email)}&readMask=names,photos,emailAddresses`,
+            {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${state.drive.accessToken}`,
+                    'Content-Type': 'application/json'
+                }
+            }
+        );
+
+        if (!response.ok) {
+            console.warn(`Failed to fetch profile for ${email}:`, response.status);
+            return null;
+        }
+
+        const data = await response.json();
+        const results = data.results || [];
+
+        if (results.length === 0) {
+            return null;
+        }
+
+        // Find the best match
+        const person = results[0].person;
+        const profile = {
+            email: email,
+            name: person.names?.[0]?.displayName || email,
+            picture: person.photos?.[0]?.url || ''
+        };
+
+        // Cache it
+        state.peerProfiles[email] = profile;
+        persistPeerProfiles();
+
+        return profile;
+    } catch (err) {
+        console.warn('Failed to fetch peer profile from Google:', err);
+        return null;
+    }
+}
+
 function initUI() {
     els.messageForm.addEventListener('submit', handleSend);
     els.startChatForm.addEventListener('submit', handleStartChat);
@@ -405,7 +476,7 @@ function ensureTokenClient() {
     if (tokenClient) return tokenClient;
     tokenClient = google.accounts.oauth2.initTokenClient({
         client_id: GOOGLE_CLIENT_ID,
-        scope: DRIVE_SCOPE,
+        scope: `${DRIVE_SCOPE} ${PEOPLE_SCOPE}`,
         include_granted_scopes: true,
         prompt: 'consent',
         callback: (resp) => {
@@ -604,12 +675,31 @@ function getRecentChats() {
             const lastMessage = chatMessages[chatMessages.length - 1];
             const timestamp = lastMessage?.timestamp || 0;
 
+            // Find the peer's profile info by looking for a message from the peer
+            let peerName = peerEmail;
+            let peerPicture = '';
+
+            // First check message history
+            for (const msg of chatMessages) {
+                if (msg.from === peerEmail && msg.fromName) {
+                    peerName = msg.fromName;
+                    peerPicture = msg.fromPicture || '';
+                    break;
+                }
+            }
+
+            // Then check cached profiles
+            if (state.peerProfiles[peerEmail]) {
+                peerName = state.peerProfiles[peerEmail].name;
+                peerPicture = state.peerProfiles[peerEmail].picture;
+            }
+
             if (!recentChatsMap[peerEmail] || recentChatsMap[peerEmail].timestamp < timestamp) {
                 recentChatsMap[peerEmail] = {
                     email: peerEmail,
                     timestamp: timestamp,
-                    name: lastMessage?.fromName || peerEmail,
-                    picture: lastMessage?.fromPicture || ''
+                    name: peerName,
+                    picture: peerPicture
                 };
             }
         }
@@ -619,7 +709,7 @@ function getRecentChats() {
     return Object.values(recentChatsMap).sort((a, b) => b.timestamp - a.timestamp);
 }
 
-function renderRecentChats() {
+async function renderRecentChats() {
     const container = document.getElementById('recent-chats');
     if (!container) return;
 
@@ -628,6 +718,17 @@ function renderRecentChats() {
     if (recentChats.length === 0) {
         container.innerHTML = '<div class="empty">No recent chats</div>';
         return;
+    }
+
+    // Try to fetch missing profiles from Google
+    for (const chat of recentChats) {
+        if (!chat.picture && state.drive.accessToken) {
+            const profile = await fetchPeerProfileFromGoogle(chat.email);
+            if (profile) {
+                chat.name = profile.name;
+                chat.picture = profile.picture;
+            }
+        }
     }
 
     container.innerHTML = recentChats.map(chat => `
