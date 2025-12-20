@@ -130,7 +130,7 @@ button#sync-drive {
 
 .layout {
     display: grid;
-    grid-template-columns: 320px 1fr;
+    grid-template-columns: 1fr 1fr;
     gap: 18px;
 }
 
@@ -139,27 +139,27 @@ button#sync-drive {
         grid-template-columns: 1fr;
         position: relative;
     }
-    
+
     .layout.show-chat .panel.info {
         display: none !important;
     }
-    
+
     .layout.show-chat .panel.chat {
         display: flex !important;
     }
-    
+
     .layout.show-peers .panel.chat {
         display: none !important;
     }
-    
+
     .layout.show-peers .panel.info {
         display: block !important;
     }
-    
+
     .layout:not(.show-chat):not(.show-peers) .panel.info {
         display: block;
     }
-    
+
     .layout:not(.show-chat):not(.show-peers) .panel.chat {
         display: none;
     }
@@ -184,7 +184,7 @@ body.dark-mode .panel {
 }
 
 .panel.info {
-    min-height: 420px;
+    min-height: 600px;
 }
 
 .section-header {
@@ -305,7 +305,7 @@ body.dark-mode .panel {
 .chat {
     display: flex;
     flex-direction: column;
-    min-height: 520px;
+    min-height: 600px;
     background: rgba(255, 255, 255, 0.7);
     backdrop-filter: blur(10px) saturate(180%);
     -webkit-backdrop-filter: blur(10px) saturate(180%);
