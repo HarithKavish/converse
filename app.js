@@ -377,7 +377,7 @@ async function fetchPeerProfileFromGoogle(email) {
         const person = results[0].person;
         const profile = {
             email: email,
-            name: person.names?.[0]?.displayName || email,
+            name: person.names?.[0]?.givenName || person.names?.[0]?.displayName || email,
             picture: person.photos?.[0]?.url || ''
         };
 
