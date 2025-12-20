@@ -306,15 +306,9 @@ function handleCredentialResponse(response) {
 window.handleCredentialResponse = handleCredentialResponse;
 
 function initGoogle() {
-    // With HTML API, the button is rendered automatically by the GIS script.
-    // We just need to ensure the callback is available and handle the signed-in state.
+    // Google sign-in is now handled by the shared header (HarithShell)
+    // Just ensure our callback is available and handle One Tap if needed
 
-    // Hide the button container if user is already signed in
-    if (state.currentUser) {
-        els.googleLoginContainer.style.display = 'none';
-    }
-
-    // Optionally trigger One Tap prompt for better UX
     googleReadyPromise()
         .then(() => {
             if (!state.currentUser) {
