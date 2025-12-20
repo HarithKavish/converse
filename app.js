@@ -28,7 +28,6 @@ const els = {
     messageForm: document.getElementById('message-form'),
     startChatForm: document.getElementById('start-chat-form'),
     peerEmailInput: document.getElementById('peer-email'),
-    googleLoginContainer: document.getElementById('google-login-container'),
     logoutBtn: document.getElementById('logout'),
 };
 
@@ -140,7 +139,7 @@ function updateAuthStatus() {
 
 function toggleAuthButtons() {
     const signedIn = Boolean(state.currentUser);
-    els.googleLoginContainer.style.display = signedIn ? 'none' : 'block';
+    // Google button is in header, so nothing to toggle here
     els.logoutBtn.hidden = !signedIn;
 }
 
