@@ -329,8 +329,9 @@ body.dark-mode .chat {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding-bottom: 10px;
+    padding: 10px 0 10px 0;
     border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
 }
 
 .chat-header-left {
@@ -449,6 +450,8 @@ body.dark-mode .messages .from-them {
     display: flex;
     gap: 8px;
     align-items: center;
+    flex-shrink: 0;
+    padding-top: 10px;
 }
 
 .message-form button {
