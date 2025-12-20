@@ -33,13 +33,10 @@
                     <button type="submit">Open chat</button>
                 </form>
 
-                <div class="section-header">Notes</div>
-                <ul class="notes">
-                    <li>Pure frontend; no backend servers.</li>
-                    <li>Chats sync to your Google Drive (appData folder) after sign-in.</li>
-                    <li>Data stays inside your Google account; revoke access anytime from Google security settings.</li>
-                    <li>Users must share email IDs manually; there is no discovery service.</li>
-                </ul>
+                <div class="section-header">Recent Chats</div>
+                <div id="recent-chats" class="recent-chats">
+                    <div class="empty">No recent chats</div>
+                </div>
             </section>
 
             <section class="panel chat">
@@ -170,7 +167,7 @@
                 HarithShell.renderHeader({
                     target: '#sharedHeader',
                     brand: {
-                        title: 'Offline-first Chat',
+                        title: 'Chat',
                         tagline: 'Peer-to-peer chat with Drive persistence'
                     }
                 });

@@ -87,6 +87,7 @@ function setCurrentUser(user) {
     updateAuthStatus();
     toggleAuthButtons();
     renderMessages();
+    renderRecentChats();
     if (user) {
         localStorage.setItem('chat-app-current-user', JSON.stringify(user));
     } else {
@@ -142,6 +143,7 @@ function setMessages(newMessages) {
     state.messages = newMessages || {};
     persistMessages();
     renderMessages();
+    renderRecentChats();
 }
 
 function renderMessages() {
@@ -183,9 +185,12 @@ function appendMessage(text) {
         to: state.peerEmail,
         text,
         timestamp: Date.now(),
+        fromName: state.currentUser.name,
+        fromPicture: state.currentUser.picture,
     });
     persistMessages();
     renderMessages();
+    renderRecentChats();
     // Best-effort cloud sync (not awaited to keep UI snappy)
     syncToDrive().catch((err) => console.warn('Drive sync failed', err));
 }
@@ -340,10 +345,23 @@ async function handleSyncClick() {
 
 function restoreLastSession() {
     try {
-        const raw = localStorage.getItem('chat-app-current-user');
-        if (raw) {
-            const parsed = JSON.parse(raw);
-            setCurrentUser(parsed);
+        // Check shared Google user first (from landing page or shared header)
+        const sharedRaw = localStorage.getItem('harith_google_user');
+        if (sharedRaw) {
+            const sharedUser = JSON.parse(sharedRaw);
+            setCurrentUser({
+                email: sharedUser.email,
+                name: sharedUser.name,
+                picture: sharedUser.picture,
+                provider: 'google'
+            });
+        } else {
+            // Fall back to chat-app-specific user
+            const raw = localStorage.getItem('chat-app-current-user');
+            if (raw) {
+                const parsed = JSON.parse(raw);
+                setCurrentUser(parsed);
+            }
         }
         const peer = localStorage.getItem('chat-app-peer');
         if (peer) setPeer(peer);
@@ -566,6 +584,77 @@ async function bootstrapDriveSync() {
         console.warn('Drive bootstrap failed', err);
         setDriveStatus('error');
     }
+}
+
+function getRecentChats() {
+    if (!state.currentUser) return [];
+
+    const recentChatsMap = {};
+
+    // Iterate through all messages
+    for (const [key, chatMessages] of Object.entries(state.messages || {})) {
+        const parts = key.split('::');
+        if (parts.length !== 2) continue;
+
+        const email1 = parts[0];
+        const email2 = parts[1];
+        const peerEmail = email1 === state.currentUser.email.toLowerCase() ? email2 : email1;
+
+        if (peerEmail && Array.isArray(chatMessages) && chatMessages.length > 0) {
+            const lastMessage = chatMessages[chatMessages.length - 1];
+            const timestamp = lastMessage?.timestamp || 0;
+
+            if (!recentChatsMap[peerEmail] || recentChatsMap[peerEmail].timestamp < timestamp) {
+                recentChatsMap[peerEmail] = {
+                    email: peerEmail,
+                    timestamp: timestamp,
+                    name: lastMessage?.fromName || peerEmail,
+                    picture: lastMessage?.fromPicture || ''
+                };
+            }
+        }
+    }
+
+    // Sort by most recent first
+    return Object.values(recentChatsMap).sort((a, b) => b.timestamp - a.timestamp);
+}
+
+function renderRecentChats() {
+    const container = document.getElementById('recent-chats');
+    if (!container) return;
+
+    const recentChats = getRecentChats();
+
+    if (recentChats.length === 0) {
+        container.innerHTML = '<div class="empty">No recent chats</div>';
+        return;
+    }
+
+    container.innerHTML = recentChats.map(chat => `
+        <div class="recent-chat-item" data-email="${chat.email}">
+            <img 
+                src="${chat.picture || 'https://www.gravatar.com/avatar/?d=mp'}" 
+                alt="${chat.name}" 
+                class="recent-chat-item__avatar"
+                loading="lazy"
+            />
+            <div class="recent-chat-item__info">
+                <div class="recent-chat-item__name">${chat.name || chat.email}</div>
+                <div class="recent-chat-item__email">${chat.email}</div>
+            </div>
+        </div>
+    `).join('');
+
+    // Add click handlers to recent chat items
+    container.querySelectorAll('.recent-chat-item').forEach(item => {
+        item.addEventListener('click', () => {
+            const email = item.dataset.email;
+            if (email) {
+                els.peerEmailInput.value = email;
+                setPeer(email);
+            }
+        });
+    });
 }
 
 main();

@@ -325,3 +325,61 @@ button#sync-drive {
 .chat-header-actions button:hover {
     border-color: rgba(109, 211, 255, 0.6);
 }
+
+.recent-chats {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.recent-chats .empty {
+    color: var(--muted);
+    font-size: 0.9rem;
+    padding: 12px 0;
+}
+
+.recent-chat-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+}
+
+.recent-chat-item:hover {
+    background: rgba(109, 211, 255, 0.1);
+    border-color: rgba(109, 211, 255, 0.3);
+}
+
+.recent-chat-item__avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.recent-chat-item__info {
+    flex: 1;
+    min-width: 0;
+}
+
+.recent-chat-item__name {
+    font-size: 0.95rem;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.recent-chat-item__email {
+    font-size: 0.8rem;
+    color: var(--muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
