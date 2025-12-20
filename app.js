@@ -809,4 +809,9 @@ async function renderRecentChats() {
     });
 }
 
-main();
+// Wait for DOM to be ready before initializing
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', main);
+} else {
+    main();
+}
