@@ -465,11 +465,18 @@ function main() {
     restoreLastSession();
     restoreDriveToken();
     if (state.currentUser) {
-        // If we have a cached token, try silent sync; otherwise show sync button
+        // If we have a cached token, try silent sync
         if (state.drive.accessToken) {
             bootstrapDriveSync();
         } else {
+            // Attempt to request Drive access on page load (with user gesture fallback)
             showSyncButton();
+            setTimeout(() => {
+                requestDriveToken()
+                    .then(() => bootstrapDriveSync())
+                    .then(() => hideSyncButton())
+                    .catch(err => console.warn('Drive access popup blocked or denied:', err));
+            }, 1000);
         }
     }
     initGoogle();
