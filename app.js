@@ -343,53 +343,28 @@ async function fetchPeerProfileFromGoogle(email) {
         return state.peerProfiles[email];
     }
 
-    // If no drive access token, return null
-    if (!state.drive.accessToken) {
-        return null;
-    }
+    // Extract name from email address (no API call needed)
+    const namePart = email.split('@')[0];
+    let displayName = namePart
+        .replace(/[0-9]+/g, '') // Remove numbers
+        .replace(/([a-z])([A-Z])/g, '$1 $2') // Handle camelCase
+        .split(/[._-]/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') // Capitalize each word
+        || email;
 
-    try {
-        // Use Google's People API to search for contacts by email
-        const response = await fetch(
-            `https://people.googleapis.com/v1/people:searchContacts?query=${encodeURIComponent(email)}&readMask=names,photos,emailAddresses`,
-            {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${state.drive.accessToken}`,
-                    'Content-Type': 'application/json'
-                }
-            }
-        );
+    // Get first name only
+    const firstName = displayName.split(' ')[0];
 
-        if (!response.ok) {
-            console.warn(`Failed to fetch profile for ${email}:`, response.status);
-            return null;
-        }
+    const profile = {
+        email: email,
+        name: firstName,
+        picture: '' // No picture without API
+    };
 
-        const data = await response.json();
-        const results = data.results || [];
+    // Cache it
+    state.peerProfiles[email] = profile;
+    persistPeerProfiles();
 
-        if (results.length === 0) {
-            return null;
-        }
-
-        // Find the best match
-        const person = results[0].person;
-        const profile = {
-            email: email,
-            name: person.names?.[0]?.givenName || person.names?.[0]?.displayName || email,
-            picture: person.photos?.[0]?.url || ''
-        };
-
-        // Cache it
-        state.peerProfiles[email] = profile;
-        persistPeerProfiles();
-
-        return profile;
-    } catch (err) {
-        console.warn('Failed to fetch peer profile from Google:', err);
-        return null;
-    }
+    return profile;
 }
 
 function initUI() {
