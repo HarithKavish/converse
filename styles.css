@@ -134,7 +134,7 @@ button#sync-drive {
     gap: 18px;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 900px) {
     .layout {
         grid-template-columns: 1fr;
         position: relative;

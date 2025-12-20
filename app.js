@@ -183,7 +183,7 @@ function setPeer(email) {
     renderMessages();
     
     // Show/hide mobile panels
-    const isMobile = window.innerWidth <= 768;
+    const isMobile = window.innerWidth <= 900;
     const layout = document.querySelector('.layout');
     const backButton = document.getElementById('back-button');
     
