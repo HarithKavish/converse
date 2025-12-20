@@ -25,16 +25,6 @@
             <section class="panel info">
                 <div class="section-header">Current User</div>
                 <div id="user-card" class="user-card empty">Not signed in</div>
-                <div class="auth">
-                    <div id="g_id_onload"
-                        data-client_id="59648450302-sqkk4pdujkt4hrm0uuhq95pq55b4jg2k.apps.googleusercontent.com"
-                        data-callback="handleCredentialResponse" data-auto_prompt="false"></div>
-                    <div id="google-login-container" class="g_id_signin" data-type="standard" data-size="large"
-                        data-theme="outline" data-text="signin_with" data-shape="pill"
-                        data-client_id="59648450302-sqkk4pdujkt4hrm0uuhq95pq55b4jg2k.apps.googleusercontent.com"></div>
-                    <button id="sync-drive" class="ghost" hidden>Sync to Drive</button>
-                    <button id="logout" class="ghost ghost-danger" hidden>Logout</button>
-                </div>
 
                 <div class="section-header">Start a Conversation</div>
                 <form id="start-chat-form" class="start-form">
@@ -73,6 +63,108 @@
     </main>
     <div id="sharedFooter"></div>
     <script defer>
+        const GOOGLE_USER_STORAGE_KEY = 'harith_google_user';
+
+        function getStoredGoogleUser() {
+            try {
+                const raw = localStorage.getItem(GOOGLE_USER_STORAGE_KEY);
+                return raw ? JSON.parse(raw) : null;
+            } catch (err) {
+                return null;
+            }
+        }
+
+        function storeGoogleUser(user) {
+            if (!user) return;
+            localStorage.setItem(GOOGLE_USER_STORAGE_KEY, JSON.stringify(user));
+        }
+
+        function clearStoredGoogleUser() {
+            localStorage.removeItem(GOOGLE_USER_STORAGE_KEY);
+        }
+
+        function extractProfileFromCredential(credential) {
+            if (!credential) return null;
+            try {
+                const payload = credential.split('.')[1];
+                const base64 = payload.replace(/-/g, '+').replace(/_/g, '/');
+                const decoded = decodeURIComponent(atob(base64)
+                    .split('')
+                    .map(char => `%${('00' + char.charCodeAt(0).toString(16)).slice(-2)}`)
+                    .join(''));
+                return JSON.parse(decoded);
+            } catch (err) {
+                return null;
+            }
+        }
+
+        function renderSignedInButton(user) {
+            const googleButtonTarget = document.getElementById('googleSignInButton');
+            if (!googleButtonTarget) return;
+            googleButtonTarget.innerHTML = `
+                <button type="button" class="signed-in-button" aria-label="Signed in as ${user.name}">
+                    <img src="${user.picture || 'https://www.gravatar.com/avatar/?d=mp'}" alt="${user.name} avatar"
+                        class="signed-in-button__avatar" loading="lazy" />
+                    <span class="signed-in-button__name">${user.name}</span>
+                </button>`;
+            const signInBtn = googleButtonTarget.querySelector('button');
+            signInBtn?.addEventListener('click', () => {
+                clearStoredGoogleUser();
+                initGoogleSignInButton();
+            });
+        }
+
+        function handleGoogleCredentialResponse(credentialResponse) {
+            const profile = extractProfileFromCredential(credentialResponse?.credential);
+            const user = {
+                name: profile?.name || 'Signed in',
+                picture: profile?.picture || '',
+                email: profile?.email || ''
+            };
+            storeGoogleUser(user);
+            renderSignedInButton(user);
+            if (window.handleCredentialResponse) {
+                window.handleCredentialResponse(credentialResponse);
+            }
+        }
+
+        let googleButtonRetries = 0;
+        function initGoogleSignInButton() {
+            const googleButtonTarget = document.getElementById('googleSignInButton');
+            if (!googleButtonTarget) return;
+            const storedProfile = getStoredGoogleUser();
+            if (storedProfile) {
+                renderSignedInButton(storedProfile);
+                return;
+            }
+            if (!window.google?.accounts?.id) {
+                if (googleButtonRetries < 10) {
+                    googleButtonRetries++;
+                    setTimeout(initGoogleSignInButton, 250);
+                }
+                return;
+            }
+            googleButtonTarget.innerHTML = '';
+            google.accounts.id.initialize({
+                client_id: '59648450302-sqkk4pdujkt4hrm0uuhq95pq55b4jg2k.apps.googleusercontent.com',
+                callback: handleGoogleCredentialResponse
+            });
+            google.accounts.id.renderButton(
+                googleButtonTarget,
+                { theme: 'outline', size: 'medium', type: 'standard', shape: 'pill' }
+            );
+        }
+
+        function injectChatHeaderAuth(actions) {
+            if (!actions || document.getElementById('chat-auth-controls')) return;
+            const html = `
+                <div id="chat-auth-controls" class="chat-header-actions">
+                    <button id="sync-drive" class="ghost" hidden>Sync to Drive</button>
+                    <button id="logout" class="ghost ghost-danger" hidden>Logout</button>
+                </div>`;
+            actions.insertAdjacentHTML('beforeend', html);
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             if (window.HarithShell) {
                 HarithShell.renderHeader({
@@ -86,8 +178,9 @@
                     target: '#sharedFooter',
                     text: 'Harith Kavish'
                 });
-                const googleWrapper = document.querySelector('.shared-header__actions .google-button-wrapper');
-                googleWrapper?.remove();
+                const actions = document.querySelector('.shared-header__actions');
+                injectChatHeaderAuth(actions);
+                initGoogleSignInButton();
             }
         });
     </script>

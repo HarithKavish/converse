@@ -304,3 +304,24 @@ button#sync-drive {
     display: flex;
     align-items: center;
 }
+
+.chat-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding-left: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.chat-header-actions button {
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    background: rgba(255, 255, 255, 0.08);
+    color: #f4f6fb;
+    padding: 0.35rem 0.9rem;
+    font-size: 0.85rem;
+}
+
+.chat-header-actions button:hover {
+    border-color: rgba(109, 211, 255, 0.6);
+}
