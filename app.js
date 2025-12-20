@@ -510,25 +510,6 @@ function main() {
 
     initUI();
 
-    // Verify sync after a brief delay to ensure header had time to update storage
-    setTimeout(() => {
-        const currentSharedUser = localStorage.getItem('harith_google_user');
-        if (currentSharedUser && !state.currentUser) {
-            console.log('Syncing from shared storage after delay');
-            try {
-                const sharedUser = JSON.parse(currentSharedUser);
-                setCurrentUser({
-                    email: sharedUser.email,
-                    name: sharedUser.name,
-                    picture: sharedUser.picture,
-                    provider: 'google'
-                });
-            } catch (err) {
-                console.warn('Failed to sync user from shared storage:', err);
-            }
-        }
-    }, 100);
-
     // Small delay for Drive token management and Google init
     setTimeout(() => {
         if (state.currentUser) {
@@ -547,10 +528,32 @@ function main() {
             }
         }
         initGoogle();
-        renderMessages();
-        // Refresh recent chats after UI is fully ready
-        renderRecentChats().catch(err => console.warn('Failed to render recent chats:', err));
     }, 100);
+
+    // Poll for header's user change - sync every 500ms to catch header signin
+    setInterval(() => {
+        const currentSharedUser = localStorage.getItem('harith_google_user');
+        if (currentSharedUser) {
+            try {
+                const sharedUser = JSON.parse(currentSharedUser);
+                if (!state.currentUser || state.currentUser.email !== sharedUser.email) {
+                    console.log('Syncing user from header');
+                    setCurrentUser({
+                        email: sharedUser.email,
+                        name: sharedUser.name,
+                        picture: sharedUser.picture,
+                        provider: 'google'
+                    });
+                }
+            } catch (err) {
+                console.debug('Failed to sync user from shared storage:', err);
+            }
+        } else if (state.currentUser) {
+            // Header user was cleared, clear local user too
+            console.log('Header logged out, syncing logout');
+            setCurrentUser(null);
+        }
+    }, 500);
 }
 
 // -------- Google Drive appData helpers --------
