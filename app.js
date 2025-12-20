@@ -479,16 +479,16 @@ window.addEventListener('storage', (event) => {
 
 function main() {
     initUI();
-    
+
     // Small delay to ensure DOM is fully ready
     setTimeout(() => {
         restoreLastSession();
         restoreDriveToken();
-        
+
         // Debug log
         const sharedUser = localStorage.getItem('harith_google_user');
         console.log('Shared user on restore:', sharedUser ? 'Found' : 'Not found');
-        
+
         if (state.currentUser) {
             // If we have a cached token, try silent sync
             if (state.drive.accessToken) {
@@ -496,12 +496,13 @@ function main() {
             } else {
                 // Attempt to request Drive access on page load (with user gesture fallback)
                 showSyncButton();
-            setTimeout(() => {
-                requestDriveToken()
-                    .then(() => bootstrapDriveSync())
-                    .then(() => hideSyncButton())
-                    .catch(err => console.warn('Drive access popup blocked or denied:', err));
-            }, 1000);
+                setTimeout(() => {
+                    requestDriveToken()
+                        .then(() => bootstrapDriveSync())
+                        .then(() => hideSyncButton())
+                        .catch(err => console.warn('Drive access popup blocked or denied:', err));
+                }, 1000);
+            }
         }
         initGoogle();
         renderMessages();
