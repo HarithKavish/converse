@@ -313,6 +313,7 @@ body.dark-mode .panel {
     display: flex;
     flex-direction: column;
     height: 100%;
+    overflow: hidden;
     background: rgba(255, 255, 255, 0.7);
     backdrop-filter: blur(10px) saturate(180%);
     -webkit-backdrop-filter: blur(10px) saturate(180%);
@@ -374,6 +375,7 @@ body.dark-mode .chat {
 
 .messages {
     flex: 1;
+    min-height: 0;
     margin: 14px 0;
     padding-right: 6px;
     overflow-y: auto;
