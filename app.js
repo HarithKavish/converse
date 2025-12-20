@@ -161,6 +161,15 @@ function initUI() {
     if (els.startChatForm) els.startChatForm.addEventListener('submit', handleStartChat);
     els.syncBtn = document.getElementById('sync-drive');
     els.syncBtn?.addEventListener('click', handleSyncClick);
+    
+    // Back button for mobile
+    const backButton = document.getElementById('back-button');
+    if (backButton) {
+        backButton.addEventListener('click', () => {
+            setPeer(null);
+        });
+    }
+    
     toggleAuthButtons();
 }
 
@@ -172,8 +181,19 @@ function setPeer(email) {
         els.peerEmailInput.value = email || '';
     }
     renderMessages();
+    
+    // Show/hide mobile panels
+    const isMobile = window.innerWidth <= 768;
+    const layout = document.querySelector('.layout');
+    const backButton = document.getElementById('back-button');
+    
     if (email) {
         localStorage.setItem('chat-app-peer', email);
+        if (isMobile && layout) {
+            layout.classList.add('show-chat');
+            layout.classList.remove('show-peers');
+        }
+        if (backButton) backButton.style.display = 'block';
         // Fetch peer profile from Google to display full name
         fetchPeerProfileFromGoogle(email)
             .then(profile => {
@@ -185,6 +205,11 @@ function setPeer(email) {
             .catch(err => console.debug('Failed to fetch peer profile:', err));
     } else {
         localStorage.removeItem('chat-app-peer');
+        if (isMobile && layout) {
+            layout.classList.remove('show-chat');
+            layout.classList.add('show-peers');
+        }
+        if (backButton) backButton.style.display = 'none';
     }
 }
 
