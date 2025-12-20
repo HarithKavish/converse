@@ -343,28 +343,99 @@ async function fetchPeerProfileFromGoogle(email) {
         return state.peerProfiles[email];
     }
 
-    // Extract name from email address (no API call needed)
-    const namePart = email.split('@')[0];
-    let displayName = namePart
-        .replace(/[0-9]+/g, '') // Remove numbers
-        .replace(/([a-z])([A-Z])/g, '$1 $2') // Handle camelCase
-        .split(/[._-]/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') // Capitalize each word
-        || email;
+    // If no drive access token, fall back to email parsing
+    if (!state.drive.accessToken) {
+        const namePart = email.split('@')[0];
+        const displayName = namePart
+            .replace(/[0-9]+/g, '')
+            .split(/[._-]/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
+            || email;
+        const firstName = displayName.split(' ')[0];
+        
+        const profile = { email, name: firstName, picture: '' };
+        state.peerProfiles[email] = profile;
+        persistPeerProfiles();
+        return profile;
+    }
 
-    // Get first name only
-    const firstName = displayName.split(' ')[0];
+    try {
+        // Fetch person's actual Google Account profile using People API
+        const response = await fetch(
+            `https://people.googleapis.com/v1/people:searchContacts?query=${encodeURIComponent(email)}&readMask=names,photos,emailAddresses`,
+            {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${state.drive.accessToken}`,
+                    'Content-Type': 'application/json'
+                }
+            }
+        );
 
-    const profile = {
-        email: email,
-        name: firstName,
-        picture: '' // No picture without API
-    };
+        if (!response.ok) {
+            console.warn(`Failed to fetch profile for ${email}:`, response.status);
+            // Fall back to email parsing
+            const namePart = email.split('@')[0];
+            const displayName = namePart
+                .replace(/[0-9]+/g, '')
+                .split(/[._-]/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
+                || email;
+            const firstName = displayName.split(' ')[0];
+            
+            const profile = { email, name: firstName, picture: '' };
+            state.peerProfiles[email] = profile;
+            persistPeerProfiles();
+            return profile;
+        }
 
-    // Cache it
-    state.peerProfiles[email] = profile;
-    persistPeerProfiles();
+        const data = await response.json();
+        const results = data.results || [];
 
-    return profile;
+        if (results.length === 0) {
+            // Fall back to email parsing
+            const namePart = email.split('@')[0];
+            const displayName = namePart
+                .replace(/[0-9]+/g, '')
+                .split(/[._-]/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
+                || email;
+            const firstName = displayName.split(' ')[0];
+            
+            const profile = { email, name: firstName, picture: '' };
+            state.peerProfiles[email] = profile;
+            persistPeerProfiles();
+            return profile;
+        }
+
+        // Get actual name from Google Account profile
+        const person = results[0].person;
+        const fullName = person.names?.[0]?.displayName || email;
+        const firstName = fullName.split(' ')[0]; // Get first name only
+
+        const profile = {
+            email: email,
+            name: firstName,
+            picture: person.photos?.[0]?.url || ''
+        };
+
+        // Cache it
+        state.peerProfiles[email] = profile;
+        persistPeerProfiles();
+
+        return profile;
+    } catch (err) {
+        console.warn('Failed to fetch peer profile from Google:', err);
+        // Fall back to email parsing
+        const namePart = email.split('@')[0];
+        const displayName = namePart
+            .replace(/[0-9]+/g, '')
+            .split(/[._-]/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
+            || email;
+        const firstName = displayName.split(' ')[0];
+        
+        const profile = { email, name: firstName, picture: '' };
+        state.peerProfiles[email] = profile;
+        persistPeerProfiles();
+        return profile;
+    }
 }
 
 function initUI() {
