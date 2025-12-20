@@ -330,6 +330,27 @@ button#sync-drive {
     display: flex;
     flex-direction: column;
     gap: 8px;
+    max-height: 300px;
+    overflow-y: auto;
+    padding-right: 8px;
+}
+
+.recent-chats::-webkit-scrollbar {
+    width: 6px;
+}
+
+.recent-chats::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 3px;
+}
+
+.recent-chats::-webkit-scrollbar-thumb {
+    background: rgba(109, 211, 255, 0.3);
+    border-radius: 3px;
+}
+
+.recent-chats::-webkit-scrollbar-thumb:hover {
+    background: rgba(109, 211, 255, 0.5);
 }
 
 .recent-chats .empty {
