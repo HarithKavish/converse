@@ -28,7 +28,6 @@ const els = {
     messageForm: document.getElementById('message-form'),
     startChatForm: document.getElementById('start-chat-form'),
     peerEmailInput: document.getElementById('peer-email'),
-    logoutBtn: document.getElementById('logout'),
 };
 
 function loadMessages() {
@@ -142,12 +141,7 @@ function updateAuthStatus() {
 }
 
 function toggleAuthButtons() {
-    const signedIn = Boolean(state.currentUser);
-    // Lazy-load logout button in case header injection hasn't happened yet
-    const logoutBtn = els.logoutBtn || document.getElementById('logout');
-    if (logoutBtn) {
-        logoutBtn.hidden = !signedIn;
-    }
+    // Auth buttons are now handled by Google's signin/signout in the header
 }
 
 function setPeer(email) {
@@ -359,7 +353,7 @@ async function fetchPeerProfileFromGoogle(email) {
             .split(/[._-]/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
             || email;
         const firstName = displayName.split(' ')[0];
-        
+
         const profile = { email, name: firstName, picture: '' };
         state.peerProfiles[email] = profile;
         persistPeerProfiles();
@@ -388,7 +382,7 @@ async function fetchPeerProfileFromGoogle(email) {
                 .split(/[._-]/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
                 || email;
             const firstName = displayName.split(' ')[0];
-            
+
             const profile = { email, name: firstName, picture: '' };
             state.peerProfiles[email] = profile;
             persistPeerProfiles();
@@ -406,7 +400,7 @@ async function fetchPeerProfileFromGoogle(email) {
                 .split(/[._-]/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
                 || email;
             const firstName = displayName.split(' ')[0];
-            
+
             const profile = { email, name: firstName, picture: '' };
             state.peerProfiles[email] = profile;
             persistPeerProfiles();
@@ -438,7 +432,7 @@ async function fetchPeerProfileFromGoogle(email) {
             .split(/[._-]/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
             || email;
         const firstName = displayName.split(' ')[0];
-        
+
         const profile = { email, name: firstName, picture: '' };
         state.peerProfiles[email] = profile;
         persistPeerProfiles();
@@ -449,12 +443,8 @@ async function fetchPeerProfileFromGoogle(email) {
 function initUI() {
     if (els.messageForm) els.messageForm.addEventListener('submit', handleSend);
     if (els.startChatForm) els.startChatForm.addEventListener('submit', handleStartChat);
-    if (els.logoutBtn) els.logoutBtn.addEventListener('click', logout);
     els.syncBtn = document.getElementById('sync-drive');
     els.syncBtn?.addEventListener('click', handleSyncClick);
-    // Update logoutBtn reference if it was created by header injection
-    els.logoutBtn = document.getElementById('logout');
-    if (els.logoutBtn) els.logoutBtn.addEventListener('click', logout);
     toggleAuthButtons();
 }
 
