@@ -144,6 +144,14 @@ function toggleAuthButtons() {
     // Auth buttons are now handled by Google's signin/signout in the header
 }
 
+function initUI() {
+    if (els.messageForm) els.messageForm.addEventListener('submit', handleSend);
+    if (els.startChatForm) els.startChatForm.addEventListener('submit', handleStartChat);
+    els.syncBtn = document.getElementById('sync-drive');
+    els.syncBtn?.addEventListener('click', handleSyncClick);
+    toggleAuthButtons();
+}
+
 function setPeer(email) {
     state.peerEmail = email;
     els.peerLabel.textContent = email || 'No peer selected';
