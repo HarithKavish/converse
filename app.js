@@ -328,6 +328,8 @@ function logout() {
     if (state.currentUser?.provider === 'google' && window.google?.accounts?.id) {
         window.google.accounts.id.revoke(state.currentUser.email, () => { });
     }
+    // Clear shared user key so header also logs out
+    localStorage.removeItem('harith_google_user');
     setCurrentUser(null);
     state.drive = { accessToken: null, expiresAt: null, fileId: null, status: 'idle' };
     localStorage.removeItem('chat-drive-token');
@@ -467,17 +469,23 @@ window.addEventListener('beforeunload', () => {
 
 // Watch for sign-in from shared header
 window.addEventListener('storage', (event) => {
-    if (event.key === 'harith_google_user' && event.newValue) {
-        try {
-            const sharedUser = JSON.parse(event.newValue);
-            setCurrentUser({
-                email: sharedUser.email,
-                name: sharedUser.name,
-                picture: sharedUser.picture,
-                provider: 'google'
-            });
-        } catch (err) {
-            console.warn('Failed to sync user from shared storage:', err);
+    if (event.key === 'harith_google_user') {
+        if (event.newValue) {
+            // User signed in from another tab/page
+            try {
+                const sharedUser = JSON.parse(event.newValue);
+                setCurrentUser({
+                    email: sharedUser.email,
+                    name: sharedUser.name,
+                    picture: sharedUser.picture,
+                    provider: 'google'
+                });
+            } catch (err) {
+                console.warn('Failed to sync user from shared storage:', err);
+            }
+        } else {
+            // User signed out from another tab/page (key was deleted)
+            setCurrentUser(null);
         }
     }
 });
