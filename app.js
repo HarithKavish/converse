@@ -536,6 +536,11 @@ window.addEventListener('storage', (event) => {
     }
 });
 
+// Listen for logout event from header (same-page logout)
+window.addEventListener('harith-logout', () => {
+    setCurrentUser(null);
+});
+
 function main() {
     // Restore session BEFORE initializing UI to prevent "Not signed in" flash
     restoreLastSession();

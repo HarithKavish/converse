@@ -108,6 +108,8 @@
             signInBtn?.addEventListener('click', () => {
                 clearStoredGoogleUser();
                 initGoogleSignInButton();
+                // Dispatch custom event so body knows to logout
+                window.dispatchEvent(new CustomEvent('harith-logout'));
             });
         }
 
