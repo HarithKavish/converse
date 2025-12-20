@@ -154,6 +154,15 @@ function setPeer(email) {
     renderMessages();
     if (email) {
         localStorage.setItem('chat-app-peer', email);
+        // Fetch peer profile from Google to display full name
+        fetchPeerProfileFromGoogle(email)
+            .then(profile => {
+                if (profile) {
+                    els.peerLabel.textContent = profile.name || email;
+                    renderRecentChats().catch(err => console.warn('Failed to render recent chats', err));
+                }
+            })
+            .catch(err => console.debug('Failed to fetch peer profile:', err));
     } else {
         localStorage.removeItem('chat-app-peer');
     }
@@ -233,6 +242,7 @@ function handleStartChat(e) {
     const peer = els.peerEmailInput.value.trim();
     if (!peer) return;
     setPeer(peer);
+    els.startChatForm.reset();
 }
 
 function decodeJwt(token) {
