@@ -34,16 +34,18 @@ body {
     margin: 0;
     min-height: 100vh;
     font-family: var(--font);
-    background: radial-gradient(circle at 20% 20%, rgba(37, 99, 235, 0.08), transparent 25%),
-        radial-gradient(circle at 80% 0%, rgba(220, 38, 38, 0.08), transparent 22%),
-        var(--bg);
+    background-image: radial-gradient(circle at 20% 20%, rgba(37, 99, 235, 0.08), transparent 25%),
+        radial-gradient(circle at 80% 0%, rgba(220, 38, 38, 0.08), transparent 22%);
+    background-attachment: fixed;
+    background-color: var(--bg);
     color: var(--text);
 }
 
 body.dark-mode {
-    background: radial-gradient(circle at 20% 20%, rgba(109, 211, 255, 0.08), transparent 25%),
-        radial-gradient(circle at 80% 0%, rgba(255, 123, 123, 0.08), transparent 22%),
-        var(--bg);
+    background-image: radial-gradient(circle at 20% 20%, rgba(109, 211, 255, 0.08), transparent 25%),
+        radial-gradient(circle at 80% 0%, rgba(255, 123, 123, 0.08), transparent 22%);
+    background-attachment: fixed;
+    background-color: var(--bg);
 }
 
 .page {
@@ -87,12 +89,12 @@ body.dark-mode {
 button {
     border: 1px solid var(--border);
     border-radius: 999px;
-    background: linear-gradient(135deg, #1e2230, #171a24);
-    color: var(--text);
+    background: var(--accent);
+    color: #fff;
     padding: 10px 16px;
     cursor: pointer;
     font-size: 14px;
-    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.2s ease;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.2s ease, background 0.2s ease;
 }
 
 button:hover {
