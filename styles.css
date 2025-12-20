@@ -169,6 +169,47 @@ button#sync-drive {
     gap: 10px;
 }
 
+.input-with-button {
+    display: flex;
+    align-items: center;
+    background: #0f1119;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 2px;
+}
+
+.input-with-button input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    padding: 10px 12px;
+    color: var(--text);
+    font-size: 15px;
+}
+
+.input-with-button input:focus {
+    outline: none;
+}
+
+.input-with-button button {
+    background: transparent;
+    border: none;
+    padding: 10px 12px;
+    color: var(--accent);
+    cursor: pointer;
+    font-size: 18px;
+    transition: color 0.2s ease;
+    margin: 0;
+    align-self: auto;
+}
+
+.input-with-button button:hover {
+    color: var(--text);
+    border-color: transparent;
+    box-shadow: none;
+    transform: none;
+}
+
 .start-form input,
 .message-form input {
     width: 100%;
@@ -232,6 +273,24 @@ button#sync-drive {
     display: flex;
     flex-direction: column;
     gap: 10px;
+}
+
+.messages::-webkit-scrollbar {
+    width: 6px;
+}
+
+.messages::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 3px;
+}
+
+.messages::-webkit-scrollbar-thumb {
+    background: rgba(109, 211, 255, 0.3);
+    border-radius: 3px;
+}
+
+.messages::-webkit-scrollbar-thumb:hover {
+    background: rgba(109, 211, 255, 0.5);
 }
 
 .messages .bubble {
