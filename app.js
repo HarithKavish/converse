@@ -339,7 +339,7 @@ async function fetchPeerProfileFromGoogle(email) {
         return state.peerProfiles[email];
     }
 
-    // Extract name from email
+    // Extract name from email as fallback
     const namePart = email.split('@')[0];
     const displayName = namePart
         .replace(/[0-9]+/g, '')
@@ -353,7 +353,7 @@ async function fetchPeerProfileFromGoogle(email) {
         picture: ''
     };
 
-    // Try People API if we have access token (this will find contacts)
+    // Use People API to find contact profile
     if (state.drive.accessToken) {
         try {
             const response = await fetch(
@@ -374,7 +374,7 @@ async function fetchPeerProfileFromGoogle(email) {
                     const person = results[0].person;
                     const fullName = person.names?.[0]?.displayName || email;
                     const firstName = fullName.split(' ')[0];
-                    
+
                     let photoUrl = '';
                     if (person.photos && person.photos.length > 0) {
                         photoUrl = person.photos[0].url || '';
@@ -388,22 +388,6 @@ async function fetchPeerProfileFromGoogle(email) {
             }
         } catch (err) {
             console.debug('People API search failed:', err.message);
-        }
-    }
-
-    // If we still don't have a picture, try to get it from Gravatar using their query API
-    // Gravatar has a public lookup API that doesn't require hashing
-    if (!profile.picture) {
-        try {
-            const response = await fetch(`https://www.gravatar.com/${email}?format=json`);
-            if (response.ok) {
-                const data = await response.json();
-                if (data.entry && data.entry[0] && data.entry[0].photos && data.entry[0].photos[0]) {
-                    profile.picture = data.entry[0].photos[0].value;
-                }
-            }
-        } catch (err) {
-            console.debug('Gravatar lookup failed:', err.message);
         }
     }
 
