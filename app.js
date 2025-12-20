@@ -522,6 +522,25 @@ window.addEventListener('beforeunload', () => {
     }
 });
 
+// Global handler for Google sign-in from shared header (same-page signin)
+window.handleGoogleSignIn = function() {
+    // Get the user from localStorage (set by the header)
+    try {
+        const sharedRaw = localStorage.getItem('harith_google_user');
+        if (sharedRaw) {
+            const sharedUser = JSON.parse(sharedRaw);
+            setCurrentUser({
+                email: sharedUser.email,
+                name: sharedUser.name,
+                picture: sharedUser.picture,
+                provider: 'google'
+            });
+        }
+    } catch (err) {
+        console.warn('Failed to handle Google sign-in:', err);
+    }
+};
+
 // Watch for sign-in from shared header
 window.addEventListener('storage', (event) => {
     if (event.key === 'harith_google_user') {
