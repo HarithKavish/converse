@@ -161,7 +161,7 @@ function initUI() {
     if (els.startChatForm) els.startChatForm.addEventListener('submit', handleStartChat);
     els.syncBtn = document.getElementById('sync-drive');
     els.syncBtn?.addEventListener('click', handleSyncClick);
-    
+
     // Back button for mobile
     const backButton = document.getElementById('back-button');
     if (backButton) {
@@ -169,7 +169,7 @@ function initUI() {
             setPeer(null);
         });
     }
-    
+
     toggleAuthButtons();
 }
 
@@ -181,12 +181,12 @@ function setPeer(email) {
         els.peerEmailInput.value = email || '';
     }
     renderMessages();
-    
+
     // Show/hide mobile panels
     const isMobile = window.innerWidth <= 900;
     const layout = document.querySelector('.layout');
     const backButton = document.getElementById('back-button');
-    
+
     if (email) {
         localStorage.setItem('chat-app-peer', email);
         if (isMobile && layout) {
@@ -523,7 +523,7 @@ window.addEventListener('beforeunload', () => {
 });
 
 // Global handler for Google sign-in from shared header (same-page signin)
-window.handleGoogleSignIn = function() {
+window.handleGoogleSignIn = function () {
     // Get the user from localStorage (set by the header)
     try {
         const sharedRaw = localStorage.getItem('harith_google_user');
@@ -579,7 +579,7 @@ function main() {
     console.log('Shared user on restore:', sharedUser ? 'Found' : 'Not found');
 
     initUI();
-    
+
     // Render recent chats on page load
     renderRecentChats().catch(err => console.warn('Failed to render recent chats on load:', err));
 
