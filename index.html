@@ -28,7 +28,12 @@
 </head>
 
 <body>
-    <div id="sharedHeader"></div>
+    <harith-header 
+        site-title="Converse" 
+        site-tagline="Secure P2P Chat" 
+        nav-links='[{"label":"Home","href":"https://harithkavish.github.io/"}]'
+        google-client-id="235284376269-a8bgbs53t4jp8j82s38dbu621l47484o.apps.googleusercontent.com">
+    </harith-header>
     <main class="page">
 
         <div class="layout">
@@ -66,138 +71,16 @@
             </section>
         </div>
     </main>
-    <div id="sharedFooter"></div>
-    <script defer>
+    <harith-footer></harith-footer>
+    <script>
+        document.addEventListener('harith-auth-change', (e) => {
+             if(e.detail.user && window.handleGoogleSignIn) window.handleGoogleSignIn();
+        });
         document.addEventListener('DOMContentLoaded', () => {
-            // 1. Render Shell
-            if (typeof HarithShell !== 'undefined') {
-                HarithShell.renderHeader({
-                    target: '#sharedHeader',
-                    brand: { title: 'Converse', tagline: 'Secure P2P Chat' },
-                    navLinks: [
-                        { label: 'Home', href: 'https://harithkavish.github.io/' }
-                    ]
-                });
-                HarithShell.renderFooter({ target: '#sharedFooter', text: 'Harith Kavish' });
-            }
-
-            // 2. Initialize Theme Toggle
-            const toggleBtn = document.getElementById('darkModeToggle');
-            if (toggleBtn && window.HarithTheme) {
-                toggleBtn.addEventListener('click', HarithTheme.toggle);
-                const current = HarithTheme.get();
-                toggleBtn.textContent = current === 'dark' ? '☀️' : '🌙';
-            }
-
-            // 3. User Profile / Google Sign-In Logic
-            const GOOGLE_USER_KEY = 'harith_google_user';
-            const googleBtnTarget = document.getElementById('googleSignInButton');
-
-            function renderProfile(user) {
-                if (!googleBtnTarget) return;
-                const dropdownId = 'userProfileDropdown';
-                googleBtnTarget.style.position = 'relative';
-
-                googleBtnTarget.innerHTML = `
-                    <button type="button" class="signed-in-button" aria-label="Signed in as ${user.name}" aria-expanded="false" aria-controls="${dropdownId}">
-                        <img src="${user.picture || 'https://www.gravatar.com/avatar/?d=mp'}" alt="${user.name}" class="signed-in-button__avatar" loading="lazy" />
-                    </button>
-                    <div id="${dropdownId}" class="user-dropdown-menu">
-                        <div class="user-dropdown-header">
-                            <span class="user-dropdown-name">${user.name}</span>
-                        </div>
-                        <button type="button" class="user-dropdown-action" id="logoutBtn">
-                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                                <polyline points="16 17 21 12 16 7"></polyline>
-                                <line x1="21" y1="12" x2="9" y2="12"></line>
-                            </svg>
-                            Sign Out
-                        </button>
-                    </div>`;
-
-                const btn = googleBtnTarget.querySelector('.signed-in-button');
-                const dropdown = document.getElementById(dropdownId);
-                const logout = document.getElementById('logoutBtn');
-
-                btn?.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    const expanded = btn.getAttribute('aria-expanded') === 'true';
-                    btn.setAttribute('aria-expanded', !expanded);
-                    btn.classList.toggle('active');
-                    dropdown.classList.toggle('show');
-                });
-
-                dropdown?.addEventListener('click', e => e.stopPropagation());
-
-                logout?.addEventListener('click', () => {
-                    localStorage.removeItem(GOOGLE_USER_KEY);
-                    location.reload();
-                    window.dispatchEvent(new CustomEvent('harith-logout'));
-                });
-
-                document.addEventListener('click', () => {
-                    if (btn) {
-                        btn.setAttribute('aria-expanded', 'false');
-                        btn.classList.remove('active');
-                    }
-                    if (dropdown) dropdown.classList.remove('show');
-                });
-            }
-
-            function decodeJwt(credential) {
-                try {
-                    const payload = credential.split('.')[1];
-                    const base64 = payload.replace(/-/g, '+').replace(/_/g, '/');
-                    const decoded = decodeURIComponent(atob(base64)
-                        .split('')
-                        .map(char => '%' + ('00' + char.charCodeAt(0).toString(16)).slice(-2))
-                        .join(''));
-                    return JSON.parse(decoded);
-                } catch (e) { return null; }
-            }
-
-            function initGSI() {
-                if (!googleBtnTarget) return;
-                // Check stored user first
-                try {
-                    const stored = localStorage.getItem(GOOGLE_USER_KEY);
-                    if (stored) {
-                        const user = JSON.parse(stored);
-                        if (user && user.name) {
-                            renderProfile(user);
-                            if (window.handleGoogleSignIn) window.handleGoogleSignIn();
-                            return;
-                        }
-                    }
-                } catch (e) { }
-
-                // Initialize Google Button
-                if (window.google) {
-                    google.accounts.id.initialize({
-                        client_id: "235284376269-a8bgbs53t4jp8j82s38dbu621l47484o.apps.googleusercontent.com",
-                        callback: (response) => {
-                            const payload = decodeJwt(response.credential);
-                            if (payload) {
-                                const user = {
-                                    name: payload.name,
-                                    picture: payload.picture,
-                                    email: payload.email
-                                };
-                                localStorage.setItem(GOOGLE_USER_KEY, JSON.stringify(user));
-                                renderProfile(user);
-                                if (window.handleGoogleSignIn) window.handleGoogleSignIn();
-                            }
-                        }
-                    });
-                    google.accounts.id.renderButton(googleBtnTarget, { theme: "outline", size: "large", shape: "pill" });
-                }
-            }
-
-            setTimeout(initGSI, 100);
+             const stored = localStorage.getItem('harith_google_user');
+             if(stored && window.handleGoogleSignIn) window.handleGoogleSignIn();
         });
     </script>
     <script defer src="app.js"></script>
 </body>
-
 </html>
